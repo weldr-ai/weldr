@@ -374,6 +374,8 @@ export const branchRouter = {
           projectId: true,
           appliedFromBranchId: true,
           revertedVersionId: true,
+          branchId: true,
+          userId: true,
         },
         with: {
           appliedFromBranch: {

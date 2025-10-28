@@ -9,9 +9,15 @@ import {
   ListPoliciesCommand,
 } from "@aws-sdk/client-iam";
 import {
+  type CreateBucketOptions,
+  type CreateBucketResponse,
   createBucket as tigrisCreateBucket,
   createBucketSnapshot as tigrisCreateBucketSnapshot,
+  get as tigrisGet,
   getPresignedUrl as tigrisGetPresignedUrl,
+  list as tigrisList,
+  put as tigrisPut,
+  remove as tigrisRemove,
   removeBucket as tigrisRemoveBucket,
 } from "@tigrisdata/storage";
 
@@ -36,10 +42,13 @@ const tigrisConfig = {
   secretAccessKey: process.env.TIGRIS_SECRET_ACCESS_KEY ?? "",
 };
 
-async function createBucket(bucketName: string): Promise<void> {
+async function createBucket(
+  bucketName: string,
+  options?: CreateBucketOptions,
+): Promise<CreateBucketResponse> {
   try {
     const response = await tigrisCreateBucket(bucketName, {
-      enableSnapshot: true,
+      ...options,
       config: tigrisConfig,
     });
 
@@ -51,6 +60,8 @@ async function createBucket(bucketName: string): Promise<void> {
       bucketName,
       response: response.data,
     });
+
+    return response.data;
   } catch (error) {
     Logger.error("Create bucket error", {
       bucketName,
@@ -440,6 +451,192 @@ async function createSnapshot(
   }
 }
 
+async function revertToSnapshot(
+  bucketName: string,
+  snapshotVersion: string,
+): Promise<string> {
+  const tempBucketName = `${bucketName}-temp-${Date.now()}`;
+
+  try {
+    Logger.info("Creating temporary bucket from snapshot", {
+      bucketName,
+      tempBucketName,
+      snapshotVersion,
+    });
+
+    const forkResult = await tigrisCreateBucket(tempBucketName, {
+      sourceBucketName: bucketName,
+      sourceBucketSnapshot: snapshotVersion,
+      enableSnapshot: false,
+      config: tigrisConfig,
+    });
+
+    if (forkResult.error) {
+      throw forkResult.error;
+    }
+
+    Logger.info("Listing current objects in bucket", { bucketName });
+
+    let hasMore = true;
+    let paginationToken: string | undefined;
+
+    while (hasMore) {
+      const listResult = await tigrisList({
+        config: {
+          ...tigrisConfig,
+          bucket: bucketName,
+        },
+        ...(paginationToken && { paginationToken }),
+      });
+
+      if (listResult.error) {
+        throw listResult.error;
+      }
+
+      if (listResult.data?.items && listResult.data.items.length > 0) {
+        Logger.info("Deleting current objects", {
+          bucketName,
+          count: listResult.data.items.length,
+        });
+
+        await Promise.all(
+          listResult.data.items.map(async (item) => {
+            const removeResult = await tigrisRemove(item.name, {
+              config: {
+                ...tigrisConfig,
+                bucket: bucketName,
+              },
+            });
+
+            if (removeResult?.error) {
+              Logger.error("Failed to delete object", {
+                bucketName,
+                path: item.name,
+                error: removeResult.error,
+              });
+            }
+          }),
+        );
+      }
+
+      hasMore = listResult.data?.hasMore ?? false;
+      paginationToken = listResult.data?.paginationToken;
+    }
+
+    Logger.info("Listing objects from snapshot", { tempBucketName });
+
+    hasMore = true;
+    paginationToken = undefined;
+
+    while (hasMore) {
+      const listResult = await tigrisList({
+        config: {
+          ...tigrisConfig,
+          bucket: tempBucketName,
+        },
+        ...(paginationToken && { paginationToken }),
+      });
+
+      if (listResult.error) {
+        throw listResult.error;
+      }
+
+      if (listResult.data?.items && listResult.data.items.length > 0) {
+        Logger.info("Copying objects from snapshot", {
+          tempBucketName,
+          bucketName,
+          count: listResult.data.items.length,
+        });
+
+        await Promise.all(
+          listResult.data.items.map(async (item) => {
+            const getResult = await tigrisGet(item.name, "stream", {
+              config: {
+                ...tigrisConfig,
+                bucket: tempBucketName,
+              },
+            });
+
+            if (getResult.error) {
+              Logger.error("Failed to get object from temp bucket", {
+                tempBucketName,
+                path: item.name,
+                error: getResult.error,
+              });
+              return;
+            }
+
+            const putResult = await tigrisPut(item.name, getResult.data, {
+              config: {
+                ...tigrisConfig,
+                bucket: bucketName,
+              },
+              allowOverwrite: true,
+            });
+
+            if (putResult.error) {
+              Logger.error("Failed to put object to original bucket", {
+                bucketName,
+                path: item.name,
+                error: putResult.error,
+              });
+            }
+          }),
+        );
+      }
+
+      hasMore = listResult.data?.hasMore ?? false;
+      paginationToken = listResult.data?.paginationToken;
+    }
+
+    Logger.info("Deleting temporary bucket", { tempBucketName });
+
+    const deleteResult = await tigrisRemoveBucket(tempBucketName, {
+      force: true,
+      config: tigrisConfig,
+    });
+
+    if (deleteResult.error) {
+      Logger.warn("Failed to delete temporary bucket", {
+        tempBucketName,
+        error: deleteResult.error,
+      });
+    }
+
+    Logger.info("Successfully reverted bucket to snapshot", {
+      bucketName,
+      snapshotVersion,
+    });
+
+    const newSnapshotVersion = await createSnapshot(
+      bucketName,
+      `${snapshotVersion}-reverted`,
+    );
+
+    return newSnapshotVersion;
+  } catch (error) {
+    Logger.error("Revert to snapshot error", {
+      bucketName,
+      snapshotVersion,
+      error,
+    });
+
+    try {
+      await tigrisRemoveBucket(tempBucketName, {
+        force: true,
+        config: tigrisConfig,
+      });
+    } catch (cleanupError) {
+      Logger.warn("Failed to cleanup temporary bucket after error", {
+        tempBucketName,
+        cleanupError,
+      });
+    }
+
+    throw error;
+  }
+}
+
 export const Tigris = {
   bucket: {
     create: createBucket,
@@ -447,6 +644,7 @@ export const Tigris = {
     fork: forkBucket,
     snapshot: {
       create: createSnapshot,
+      revert: revertToSnapshot,
     },
   },
   credentials: {

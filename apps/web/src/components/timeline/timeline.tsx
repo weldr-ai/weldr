@@ -33,6 +33,7 @@ import { CreateBranchDialog } from "./create-branch-dialog";
 import { BranchAncestryBreadcrumb } from "./navigation/branch-ancestry-breadcrumb";
 import { ForkIndicator } from "./navigation/fork-indicator";
 import { VariantSiblingsNav } from "./navigation/variant-siblings-nav";
+import { RevertVersionDialog } from "./revert-version-dialog";
 
 type TimelineContextValue = {
   open: boolean;
@@ -188,6 +189,32 @@ export function TimelineContent({ className }: { className?: string }) {
 
       <div className="scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground scrollbar-track-transparent max-h-[150px] overflow-y-auto">
         <div className="flex flex-col p-3">
+          <div className="relative">
+            <div className="grid cursor-default grid-cols-[1fr_1.5rem] items-center gap-2 rounded-md transition-colors duration-300">
+              <div className="grid grid-cols-[auto_2.5rem_3rem_1fr] items-center gap-2 rounded-md px-2 py-1 hover:bg-accent">
+                <div className="relative flex h-full items-center justify-center">
+                  <div className="relative z-10 size-2 shrink-0 rounded-full bg-muted-foreground" />
+                  <div
+                    className="-translate-x-1/2 absolute top-[calc(50%+4px)] bottom-0 left-1/2 z-10 w-px border-dashed bg-border"
+                    style={{ height: "calc(100% + 0.5rem)" }}
+                  />
+                </div>
+
+                <span className="text-left text-muted-foreground text-xs">
+                  #
+                  {versions[0]?.sequenceNumber
+                    ? versions[0].sequenceNumber + 1
+                    : 1}
+                </span>
+
+                <div className="flex items-center">
+                  <CommitTypeBadge type="new" />
+                </div>
+
+                <span className="text-left text-xs">New version</span>
+              </div>
+            </div>
+          </div>
           {versions.map((version, index) => {
             const forkedBranches = versionToBranchesMap[version.id] || [];
             const parsed = parseConventionalCommit(version.message || "");
@@ -221,7 +248,7 @@ export function TimelineContent({ className }: { className?: string }) {
                         />
                         {!isLast && (
                           <div
-                            className="-translate-x-1/2 absolute top-[calc(50%+4px)] bottom-0 left-1/2 w-px bg-border"
+                            className="-translate-x-1/2 absolute top-[calc(50%+4px)] bottom-0 left-1/2 z-10 w-px bg-border"
                             style={{ height: "calc(100% + 0.5rem)" }}
                           />
                         )}
@@ -374,21 +401,28 @@ function TimelineItem({
             </span>
           )}
           {isCompleted && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="size-5 rounded-sm text-muted-foreground hover:text-foreground"
-                  onClick={() => window.open(previewUrl, "_blank")}
-                >
-                  <ExternalLinkIcon className="size-3" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent className="border bg-muted text-xs">
-                <p>Open Preview</p>
-              </TooltipContent>
-            </Tooltip>
+            <>
+              <RevertVersionDialog
+                version={version}
+                onScrollToVersion={onScrollToVersion}
+              />
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-5 rounded-sm text-muted-foreground hover:text-foreground"
+                    onClick={() => window.open(previewUrl, "_blank")}
+                  >
+                    <ExternalLinkIcon className="size-3" />
+                    <span className="sr-only">Open Preview</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="border bg-muted text-xs">
+                  <p>Open Preview</p>
+                </TooltipContent>
+              </Tooltip>
+            </>
           )}
         </div>
       </div>

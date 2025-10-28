@@ -11,15 +11,16 @@ import {
   uniqueNamesGenerator,
 } from "unique-names-generator";
 
-import { Button } from "@weldr/ui/components/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@weldr/ui/components/dialog";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@weldr/ui/components/alert-dialog";
 import { toast } from "@weldr/ui/hooks/use-toast";
 
 import { useTRPC } from "@/lib/trpc/react";
@@ -73,20 +74,20 @@ export function CreateBranchDialog({
   );
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[450px]">
-        <DialogHeader>
-          <DialogTitle>
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent className="sm:max-w-[450px]">
+        <AlertDialogHeader>
+          <AlertDialogTitle>
             Create {branchType === "variant" ? "Variant" : "Stream"}
-          </DialogTitle>
-          <DialogDescription>
+          </AlertDialogTitle>
+          <AlertDialogDescription>
             Create a new branch from version #{versionNumber}.
-          </DialogDescription>
-        </DialogHeader>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
 
-        <div className="space-y-1.5 rounded-lg border bg-muted/50 p-3">
+        <div className="space-y-1.5 rounded-lg border bg-muted/50 px-3 py-2">
           <p className="text-muted-foreground text-xs">Temporary name</p>
-          <code className="block rounded bg-background px-2 py-1.5 font-mono text-sm">
+          <code className="block rounded bg-background px-2 py-1 font-mono text-xs">
             {generatedName}
           </code>
           <p className="text-muted-foreground text-xs">
@@ -94,18 +95,12 @@ export function CreateBranchDialog({
           </p>
         </div>
 
-        <DialogFooter>
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            onClick={() => onOpenChange(false)}
-            disabled={createBranch.isPending}
-          >
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={createBranch.isPending} className="h-8">
             Cancel
-          </Button>
-          <Button
-            size="sm"
+          </AlertDialogCancel>
+          <AlertDialogAction
+            className="h-8"
             onClick={() =>
               createBranch.mutate({
                 projectId,
@@ -120,9 +115,9 @@ export function CreateBranchDialog({
               <Loader2Icon className="size-4 animate-spin" />
             )}
             Create
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
