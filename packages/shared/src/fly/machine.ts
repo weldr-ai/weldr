@@ -271,12 +271,15 @@ export namespace Machine {
             },
             secrets: [
               {
+                name: "BUCKET_NAME",
                 env_var: "S3_BUCKET_NAME",
               },
               {
+                name: "S3_ACCESS_KEY",
                 env_var: "S3_ACCESS_KEY_ID",
               },
               {
+                name: "S3_SECRET_KEY",
                 env_var: "S3_SECRET_ACCESS_KEY",
               },
             ],
