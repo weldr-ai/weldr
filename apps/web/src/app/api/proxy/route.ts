@@ -3,17 +3,26 @@ import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@weldr/auth";
 import { and, db, eq } from "@weldr/db";
 import { projects } from "@weldr/db/schema";
-import type { Attachment, UserMessage } from "@weldr/shared/types";
 
 export async function POST(request: NextRequest) {
-  const body = (await request.json()) as {
-    projectId: string;
-    branchId: string;
-    message: {
-      content: UserMessage["content"];
-      attachments: Attachment[];
-    };
-  };
+  const { searchParams } = new URL(request.url);
+  const requestBody = await request.json();
+
+  const { endpoint, projectId, ...restBody } = requestBody;
+
+  if (!endpoint) {
+    return NextResponse.json(
+      { error: "Endpoint is required" },
+      { status: 400 },
+    );
+  }
+
+  if (!projectId) {
+    return NextResponse.json(
+      { error: "Project ID is required" },
+      { status: 400 },
+    );
+  }
 
   try {
     const session = await auth.api.getSession({
@@ -26,7 +35,7 @@ export async function POST(request: NextRequest) {
 
     const project = await db.query.projects.findFirst({
       where: and(
-        eq(projects.id, body.projectId),
+        eq(projects.id, projectId),
         eq(projects.userId, session.user.id),
       ),
     });
@@ -36,7 +45,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (process.env.NODE_ENV === "production") {
-      const appName = `app-development-${body.projectId}`;
+      const appName = `app-development-${projectId}`;
 
       return new NextResponse(null, {
         status: 200,
@@ -64,11 +73,14 @@ export async function POST(request: NextRequest) {
     headers.set("origin", "http://localhost:8080");
     headers.set("content-type", "application/json");
 
-    const response = await fetch(`${url}/trigger`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(body),
-    });
+    const response = await fetch(
+      `${url}${endpoint}?${searchParams.toString()}`,
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ projectId, ...restBody }),
+      },
+    );
 
     return new NextResponse(response.body, {
       status: response.status,

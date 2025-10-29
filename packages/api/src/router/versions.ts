@@ -20,6 +20,7 @@ import type {
 } from "@weldr/shared/types";
 
 import { protectedProcedure } from "../init";
+import { callAgentProxy } from "../utils";
 
 export const versionRouter = {
   create: protectedProcedure
@@ -424,6 +425,31 @@ export const versionRouter = {
 
         return revertedVersion;
       });
+
+      try {
+        const { commitHash } = await callAgentProxy<{ commitHash: string }>(
+          "/api/versions/revert",
+          {
+            projectId: input.projectId,
+            versionId: input.versionId,
+            branchId: version.branch.id,
+          },
+          ctx.headers,
+        );
+
+        // Update the reverted version with the commit hash
+        if (commitHash) {
+          await db
+            .update(versions)
+            .set({ commitHash })
+            .where(eq(versions.id, revertedVersion.id));
+
+          revertedVersion.commitHash = commitHash;
+        }
+      } catch (error) {
+        // Log error but don't fail the entire revert since the version is already created
+        console.error("Failed to perform git revert:", error);
+      }
 
       return revertedVersion;
     }),

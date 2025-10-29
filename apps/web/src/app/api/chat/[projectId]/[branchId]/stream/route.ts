@@ -30,7 +30,6 @@ export async function GET(
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
 
-    // Verify the branch exists and belongs to the project
     const branch = await db.query.branches.findFirst({
       where: and(eq(branches.id, branchId), eq(branches.projectId, projectId)),
     });

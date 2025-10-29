@@ -18,50 +18,7 @@ import {
 } from "@weldr/shared/validators/integrations";
 
 import { createTRPCRouter, protectedProcedure } from "../init";
-
-async function triggerInstallation({
-  projectId,
-  branchId,
-  triggerWorkflow = false,
-  headers,
-}: {
-  projectId: string;
-  branchId: string;
-  triggerWorkflow?: boolean;
-  headers: Headers;
-}): Promise<void> {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-  const url = `${baseUrl}/api/integrations/install`;
-
-  const requestHeaders = new Headers();
-
-  // Forward authorization headers
-  headers.forEach((value, key) => {
-    if (
-      key.toLowerCase().startsWith("cookie") ||
-      key.toLowerCase() === "authorization"
-    ) {
-      requestHeaders.set(key, value);
-    }
-  });
-
-  requestHeaders.set("content-type", "application/json");
-
-  const response = await fetch(url, {
-    method: "POST",
-    headers: requestHeaders,
-    body: JSON.stringify({
-      projectId,
-      branchId,
-      triggerWorkflow,
-    }),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Failed to trigger installation: ${errorText}`);
-  }
-}
+import { callAgentProxy } from "../utils";
 
 export const integrationsRouter = createTRPCRouter({
   install: protectedProcedure
@@ -134,13 +91,15 @@ export const integrationsRouter = createTRPCRouter({
           `[integrations.install] Queued integration ${integration.key} for version ${input.versionId}`,
         );
 
-        // Trigger the installation
-        await triggerInstallation({
-          projectId: version.projectId,
-          branchId: version.branchId,
-          triggerWorkflow: input.triggerWorkflow,
-          headers: ctx.headers,
-        });
+        await callAgentProxy(
+          "/api/integrations/install",
+          {
+            projectId: version.projectId,
+            branchId: version.branchId,
+            triggerWorkflow: input.triggerWorkflow,
+          },
+          ctx.headers,
+        );
       });
 
       return { success: true };
@@ -280,7 +239,7 @@ export const integrationsRouter = createTRPCRouter({
       // Trigger installation if branchId was provided
       if (input.branchId) {
         try {
-          await triggerInstallation({
+          await callAgentProxy("/api/integrations/install", {
             projectId: input.projectId,
             branchId: input.branchId,
             triggerWorkflow: false,
@@ -583,12 +542,15 @@ export const integrationsRouter = createTRPCRouter({
       // Trigger installation if branchId was provided
       if (input.branchId) {
         try {
-          await triggerInstallation({
-            projectId: input.projectId,
-            branchId: input.branchId,
-            triggerWorkflow: input.triggerWorkflow ?? false,
-            headers: ctx.headers,
-          });
+          await callAgentProxy(
+            "/api/integrations/install",
+            {
+              projectId: input.projectId,
+              branchId: input.branchId,
+              triggerWorkflow: input.triggerWorkflow ?? false,
+            },
+            ctx.headers,
+          );
 
           console.log(
             `[integrations.createBatch:${input.projectId}] Installation triggered successfully`,

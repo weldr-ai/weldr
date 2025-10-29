@@ -28,12 +28,13 @@ export function useWorkflowTrigger({
       attachments: Attachment[];
     }) => {
       try {
-        const triggerResponse = await fetch(`/api/chat`, {
+        const triggerResponse = await fetch("/api/proxy", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
+            endpoint: "/trigger",
             projectId,
             branchId,
             message,

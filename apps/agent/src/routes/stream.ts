@@ -25,8 +25,8 @@ const route = createRoute({
       projectId: z.string().openapi({ description: "Project ID" }),
       branchId: z.string().openapi({ description: "Branch ID" }),
     }),
-    headers: z.object({
-      "last-event-id": z.string().optional().openapi({
+    query: z.object({
+      lastEventId: z.string().optional().openapi({
         description: "Last received event ID for resuming streams",
       }),
     }),
@@ -62,7 +62,7 @@ const router = createRouter();
 
 router.openapi(route, async (c) => {
   const { projectId, branchId } = c.req.valid("param");
-  const lastEventId = c.req.header("Last-Event-ID");
+  const lastEventId = c.req.query("lastEventId");
 
   const session = await auth.api.getSession({
     headers: c.req.raw.headers,
