@@ -3,7 +3,11 @@ import { promises as fs } from "node:fs";
 import { Logger } from "@weldr/shared/logger";
 
 import { runCommand } from "./commands";
-import { BRANCH_METADATA_FILE, WORKSPACE_DIR } from "./constants";
+import {
+  BRANCH_METADATA_FILE,
+  resolveScriptPath,
+  WORKSPACE_DIR,
+} from "./constants";
 
 export interface BranchMetadata {
   branchId: string;
@@ -49,7 +53,7 @@ export async function ensureBranchDir(
   });
 
   const result = await runCommand(
-    "/usr/local/bin/create-branch-dir.sh",
+    resolveScriptPath("create-branch-dir.sh"),
     [branchId, projectId],
     {
       env: {
@@ -157,7 +161,7 @@ export async function syncBranchToS3(
       : "https://t3.storage.dev";
 
   const result = await runCommand(
-    "/usr/local/bin/sync-to-s3.sh",
+    resolveScriptPath("sync-to-s3.sh"),
     [branchId, projectId],
     {
       env: {
@@ -211,7 +215,7 @@ export async function syncBranchFromS3(
       : "https://t3.storage.dev";
 
   const result = await runCommand(
-    "/usr/local/bin/sync-from-s3.sh",
+    resolveScriptPath("sync-from-s3.sh"),
     [branchId, projectId],
     {
       env: {

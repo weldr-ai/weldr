@@ -5,6 +5,7 @@ import { requestId } from "hono/request-id";
 import { Logger } from "@weldr/shared/logger";
 
 import { recoverEnrichingJobs } from "./ai/utils/enriching-jobs";
+import { initializeWorkspace } from "./lib/constants";
 import { closeRedisConnections } from "./lib/stream-utils";
 import { configureOpenAPI, createRouter } from "./lib/utils";
 import { loggerMiddleware } from "./middlewares/logger";
@@ -87,6 +88,7 @@ serve(
   },
   async (info) => {
     Logger.info(`Server is running on http://localhost:${info.port}`);
+    await initializeWorkspace();
     await recoverWorkflow();
     await recoverEnrichingJobs();
   },
