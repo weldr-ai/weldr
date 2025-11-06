@@ -327,7 +327,7 @@ export const versionRouter = {
       }
 
       const newSnapshotVersion = await Tigris.bucket.snapshot.revert(
-        `app-${input.projectId}-branch-${version.branch.id}`,
+        `project-${input.projectId}-branch-${version.branch.id}`,
         version.bucketSnapshotVersion,
       );
 

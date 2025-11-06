@@ -107,13 +107,13 @@ function createProjectPolicyDocument(projectId: string): string {
         Sid: "ListObjectsInProjectBuckets",
         Effect: "Allow",
         Action: ["s3:ListBucket"],
-        Resource: [`arn:aws:s3:::app-${projectId}-*`],
+        Resource: [`arn:aws:s3:::project-${projectId}-*`],
       },
       {
         Sid: "ManageAllObjectsInProjectBuckets",
         Effect: "Allow",
         Action: ["s3:*"],
-        Resource: [`arn:aws:s3:::app-${projectId}-*/*`],
+        Resource: [`arn:aws:s3:::project-${projectId}-*/*`],
       },
     ],
   };
@@ -208,7 +208,7 @@ async function deleteAccessKey(bucketName: string): Promise<Error | undefined> {
 
 async function createProjectPolicy(projectId: string): Promise<string> {
   try {
-    const policyName = `app-${projectId}-policy`;
+    const policyName = `project-${projectId}-policy`;
     const policyDocument = createProjectPolicyDocument(projectId);
     const policyResponse = await iamClient.send(
       new CreatePolicyCommand({
@@ -266,7 +266,7 @@ async function findProjectPolicyByName(
   projectId: string,
 ): Promise<string | undefined> {
   try {
-    const policyName = `app-${projectId}-policy`;
+    const policyName = `project-${projectId}-policy`;
     const listPoliciesResponse = await iamClient.send(
       new ListPoliciesCommand({
         Scope: "Local",
@@ -291,7 +291,7 @@ async function deleteProjectPolicy(
   projectId: string,
 ): Promise<Error | undefined> {
   try {
-    const policyName = `app-${projectId}-policy`;
+    const policyName = `project-${projectId}-policy`;
     const policyArn = await findProjectPolicyByName(projectId);
 
     if (!policyArn) {
@@ -323,7 +323,7 @@ async function deleteProjectPolicy(
 
 async function createCredentials(projectId: string): Promise<Credentials> {
   try {
-    const userName = `app-${projectId}`;
+    const userName = `project-${projectId}`;
     const accessKey = await createAccessKey(userName);
 
     const policyArn = await createProjectPolicy(projectId);
@@ -351,7 +351,7 @@ async function createCredentials(projectId: string): Promise<Credentials> {
 async function deleteCredentials(
   projectId: string,
 ): Promise<Error | undefined> {
-  const userName = `app-${projectId}`;
+  const userName = `project-${projectId}`;
   const errors = await Promise.all([
     deleteAccessKey(userName),
     deleteProjectPolicy(projectId),

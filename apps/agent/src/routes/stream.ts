@@ -1,11 +1,11 @@
 import { createRoute, z } from "@hono/zod-openapi";
 
-import { auth } from "@weldr/auth";
 import { and, db, eq } from "@weldr/db";
 import { branches, projects } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
 import { nanoid } from "@weldr/shared/nanoid";
 
+import { auth } from "@/lib/auth";
 import {
   createSSEStream,
   createStreamId,

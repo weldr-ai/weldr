@@ -164,7 +164,7 @@ export const projectsRouter = {
         if (developmentAppId) {
           promises.push(Fly.app.destroy({ type: "development", projectId }));
           promises.push(
-            Tigris.bucket.delete(`app-${projectId}-branch-${mainBranchId}`),
+            Tigris.bucket.delete(`project-${projectId}-branch-${mainBranchId}`),
           );
           promises.push(Tigris.credentials.delete(projectId));
         }
@@ -333,7 +333,7 @@ export const projectsRouter = {
             type: "production",
             projectId: project.id,
           }),
-          Tigris.bucket.delete(`app-${project.id}`),
+          Tigris.bucket.delete(`project-${project.id}`),
           Tigris.credentials.delete(project.id),
         ]);
 

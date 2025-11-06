@@ -1,5 +1,6 @@
 import { Logger } from "@weldr/shared/logger";
 
+import { ensureBranchDir } from "@/lib/branch-state";
 import { stream } from "@/lib/stream-utils";
 import type { WorkflowContext } from "./context";
 
@@ -101,6 +102,32 @@ export function createWorkflow(
 
       // Mark workflow as executing
       api.status = "executing";
+
+      // Ensure branch directory exists before executing any steps
+      logger.info("Ensuring branch directory exists", {
+        extra: { branchId: branch.id, projectId: project.id },
+      });
+
+      try {
+        const { branchDir, status } = await ensureBranchDir(
+          branch.id,
+          project.id,
+        );
+        logger.info(`Branch directory ${status}`, {
+          extra: { branchDir, status },
+        });
+      } catch (error) {
+        logger.error("Failed to ensure branch directory exists", {
+          extra: {
+            branchId: branch.id,
+            projectId: project.id,
+            error: error instanceof Error ? error.message : String(error),
+          },
+        });
+        throw new Error(
+          `Cannot execute workflow: failed to ensure branch directory exists`,
+        );
+      }
 
       // Stream status to the client
       const currentStep =

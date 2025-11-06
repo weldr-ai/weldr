@@ -46,7 +46,7 @@ export async function recoverWorkflow() {
   }
 
   if (!project) {
-    throw new Error("Project not found");
+    return;
   }
 
   const installedCategories = await getInstalledCategories(project.id);

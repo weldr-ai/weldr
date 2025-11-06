@@ -1,9 +1,9 @@
 import { createRoute, z } from "@hono/zod-openapi";
 
-import { auth } from "@weldr/auth";
 import { and, db, eq } from "@weldr/db";
 import { branches, projects, versions } from "@weldr/db/schema";
 
+import { auth } from "@/lib/auth";
 import { Git } from "@/lib/git";
 import { createRouter } from "@/lib/utils";
 

@@ -62,17 +62,23 @@ app.onError((err, c) => {
 const port = process.env.PORT ? Number.parseInt(process.env.PORT) : 8080;
 
 // Graceful shutdown
-process.on("SIGINT", async () => {
-  Logger.info("Received SIGINT, shutting down gracefully...");
-  await closeRedisConnections();
-  process.exit(0);
-});
+async function gracefulShutdown(signal: string) {
+  Logger.info(`Received ${signal}, shutting down gracefully...`);
 
-process.on("SIGTERM", async () => {
-  Logger.info("Received SIGTERM, shutting down gracefully...");
-  await closeRedisConnections();
+  try {
+    // Close Redis connections
+    await closeRedisConnections();
+  } catch (error) {
+    Logger.error("Error during graceful shutdown", {
+      extra: { error: error instanceof Error ? error.message : String(error) },
+    });
+  }
+
   process.exit(0);
-});
+}
+
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
 
 serve(
   {

@@ -90,8 +90,8 @@ export const branchRouter = {
       }
 
       const branchId = nanoid();
-      const sourceBucket = `app-${input.projectId}-branch-${forkedVersion.branchId}`;
-      const forkBucket = `app-${input.projectId}-branch-${branchId}`;
+      const sourceBucket = `project-${input.projectId}-branch-${forkedVersion.branchId}`;
+      const forkBucket = `project-${input.projectId}-branch-${branchId}`;
 
       try {
         await Tigris.bucket.fork(

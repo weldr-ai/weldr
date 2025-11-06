@@ -7,7 +7,7 @@ export default defineConfig({
   platform: "node",
   format: "esm",
   minify: true,
-  noExternal: ["@weldr/auth", "@weldr/db", "@weldr/shared"],
+  noExternal: [/^@weldr\/.*/],
   external: ["pg-cloudflare"],
   copy: (options) => {
     const integrationPaths: Array<{ from: string; to: string }> = [];

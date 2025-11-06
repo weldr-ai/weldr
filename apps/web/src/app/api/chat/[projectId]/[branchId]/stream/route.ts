@@ -39,7 +39,7 @@ export async function GET(
     }
 
     if (process.env.NODE_ENV === "production") {
-      const appName = `app-development-${projectId}`;
+      const appName = `project-development-${projectId}`;
 
       return new NextResponse(null, {
         status: 200,

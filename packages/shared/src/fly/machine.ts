@@ -3,7 +3,9 @@ import { ofetch } from "ofetch/node";
 import { ofetchConfig } from "../ofetch-config";
 import type { FlyAppType } from "./config";
 import { flyApiHostname, flyApiKey } from "./config";
+import { Platform } from "./platform";
 import type { components, paths } from "./types";
+import { Volume } from "./volume";
 
 export namespace Machine {
   export const get = async ({
@@ -17,7 +19,7 @@ export namespace Machine {
   }) => {
     try {
       const response = await ofetch<components["schemas"]["Machine"]>(
-        `${flyApiHostname}/v1/apps/app-${type}-${projectId}/machines/${machineId}`,
+        `${flyApiHostname}/v1/apps/project-${projectId}-${type}/machines/${machineId}`,
         {
           method: "GET",
           headers: {
@@ -46,7 +48,7 @@ export namespace Machine {
     projectId: string;
   }) => {
     const response = await ofetch<components["schemas"]["Machine"][]>(
-      `${flyApiHostname}/v1/apps/app-${type}-${projectId}/machines`,
+      `${flyApiHostname}/v1/apps/project-${projectId}-${type}/machines`,
       {
         method: "GET",
         headers: {
@@ -96,7 +98,7 @@ export namespace Machine {
       try {
         const response = await ofetch<
           paths["/apps/{app_name}/machines"]["post"]["responses"][200]["content"]["application/json"]
-        >(`${flyApiHostname}/v1/apps/app-${type}-${projectId}/machines`, {
+        >(`${flyApiHostname}/v1/apps/project-${projectId}-${type}/machines`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -136,6 +138,123 @@ export namespace Machine {
     );
   };
 
+  /**
+   * Create a development machine with a volume attached in a region with available resources.
+   * Uses Platform API to check for available regions before creating resources.
+   * This function is only for development machines.
+   */
+  export const createWithVolume = async ({
+    projectId,
+    config,
+    volumeSizeGb = 20,
+    volumeMountPath = "/dev/weldr_env_vol",
+    preferredRegion = "us",
+  }: {
+    projectId: string;
+    config: paths["/apps/{app_name}/machines"]["post"]["requestBody"]["content"]["application/json"]["config"];
+    volumeSizeGb?: number;
+    volumeMountPath?: string;
+    preferredRegion?: "eu" | "us";
+  }) => {
+    const type: FlyAppType = "development";
+    const compute = config?.guest ?? Machine.presets.development.guest;
+
+    const availableRegions =
+      await Platform.getAvailableRegionsForMachineWithVolume({
+        compute,
+        volumeSizeGb,
+        preferredRegion,
+      });
+
+    if (availableRegions.length === 0) {
+      throw new Error(
+        `No available regions found for machine with ${volumeSizeGb}GB volume`,
+      );
+    }
+
+    let lastError: Error | null = null;
+
+    for (const region of availableRegions) {
+      try {
+        const volume = await Volume.create({
+          type,
+          projectId,
+          config: {
+            name: `machine-${Date.now()}`,
+            region,
+            size_gb: volumeSizeGb,
+          },
+        });
+
+        if (!volume.id) {
+          throw new Error("Failed to create volume: No volume ID returned");
+        }
+
+        const baseConfig = config ?? Machine.presets.development;
+        const machineConfig = {
+          ...baseConfig,
+          mounts: [
+            {
+              volume: volume.id,
+              path: volumeMountPath,
+            },
+          ],
+          env: {
+            ...(baseConfig.env ?? {}),
+            PROJECT_ID: projectId,
+          },
+        } as paths["/apps/{app_name}/machines"]["post"]["requestBody"]["content"]["application/json"]["config"];
+
+        const response = await ofetch<
+          paths["/apps/{app_name}/machines"]["post"]["responses"][200]["content"]["application/json"]
+        >(`${flyApiHostname}/v1/apps/project-${projectId}-${type}/machines`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${flyApiKey}`,
+          },
+          body: {
+            region,
+            config: machineConfig,
+          } satisfies components["schemas"]["CreateMachineRequest"],
+          ...ofetchConfig({ tag: `fly:machine:createWithVolume:${projectId}` }),
+        });
+
+        if (!response.id) {
+          await Volume.destroy({
+            type,
+            projectId,
+            volumeId: volume.id,
+          }).catch(() => {
+            // Ignore cleanup errors
+          });
+          throw new Error("Failed to create machine");
+        }
+
+        return {
+          machineId: response.id,
+          volumeId: volume.id,
+          region,
+        };
+      } catch (error) {
+        console.error("Error creating machine with volume:", {
+          error: error instanceof Error ? error.message : String(error),
+          projectId,
+          type,
+          region,
+        });
+        lastError = error instanceof Error ? error : new Error(String(error));
+      }
+    }
+
+    throw (
+      lastError ||
+      new Error(
+        "Failed to create machine with volume: All available regions failed",
+      )
+    );
+  };
+
   export const destroy = async ({
     type,
     projectId,
@@ -147,7 +266,7 @@ export namespace Machine {
   }) => {
     try {
       await ofetch(
-        `${flyApiHostname}/v1/apps/app-${type}-${projectId}/machines/${machineId}?force=true`,
+        `${flyApiHostname}/v1/apps/project-${projectId}-${type}/machines/${machineId}?force=true`,
         {
           method: "DELETE",
           headers: {
@@ -178,7 +297,7 @@ export namespace Machine {
     state?: "started" | "stopped" | "suspended" | "destroyed";
   }) => {
     await ofetch(
-      `${flyApiHostname}/v1/apps/app-${type}-${projectId}/machines/${machineId}/wait?state=${state}`,
+      `${flyApiHostname}/v1/apps/project-${projectId}-${type}/machines/${machineId}/wait?state=${state}`,
       {
         method: "GET",
         headers: {
@@ -199,7 +318,7 @@ export namespace Machine {
     machineId: string;
   }) => {
     await ofetch(
-      `${flyApiHostname}/v1/apps/app-${type}-${projectId}/machines/${machineId}/start`,
+      `${flyApiHostname}/v1/apps/project-${projectId}-${type}/machines/${machineId}/start`,
       {
         method: "POST",
         headers: {
@@ -211,151 +330,49 @@ export namespace Machine {
   };
 
   export const presets = {
-    development: (
-      projectId: string,
-    ): paths["/apps/{app_name}/machines"]["post"]["requestBody"]["content"]["application/json"]["config"] =>
-      ({
-        init: {
-          exec: ["/sbin/pilot"],
+    development: {
+      image: "registry.fly.io/weldr-images:weldr-agent",
+      guest: {
+        cpu_kind: "shared",
+        cpus: 1,
+        memory_mb: 1024,
+      },
+      env: {
+        S3_ENDPOINT: "https://fly.storage.tigris.dev",
+      },
+      services: [
+        {
+          protocol: "tcp",
+          internal_port: 80,
+          autostop: "stop",
+          autostart: true,
+          ports: [
+            {
+              port: 443,
+              handlers: ["tls", "http"],
+            },
+            {
+              port: 80,
+              handlers: ["http"],
+            },
+          ],
+          checks: [
+            {
+              type: "http",
+              port: 8080,
+              method: "GET",
+              path: "/health",
+              // @ts-expect-error - Fly API types are not fully typed
+              grace_period: "15s",
+              // @ts-expect-error - Fly API types are not fully typed
+              interval: "10s",
+              // @ts-expect-error - Fly API types are not fully typed
+              timeout: "5s",
+            },
+          ],
         },
-        guest: {
-          cpu_kind: "shared",
-          cpus: 1,
-          memory_mb: 1024,
-        },
-        env: {
-          PROJECT_ID: projectId,
-        },
-        services: [
-          {
-            protocol: "tcp",
-            internal_port: 80,
-            autostop: "stop",
-            autostart: true,
-            ports: [
-              {
-                port: 443,
-                handlers: ["tls", "http"],
-              },
-              {
-                port: 80,
-                handlers: ["http"],
-              },
-            ],
-          },
-        ],
-        volumes: [
-          {
-            name: "shared",
-            temp_dir: {
-              size_mb: 100,
-              storage_type: "memory",
-            },
-          },
-        ],
-        containers: [
-          {
-            name: "storage",
-            image: "docker.io/flyio/app-storage:v0.0.26",
-            cmd: ["/usr/local/bin/mount.sh"],
-            // @ts-ignore - the config is not typed correctly
-            mounts: [
-              {
-                name: "shared",
-                path: "/data",
-              },
-            ],
-            env: {
-              S3_REGION: "auto",
-              S3_ENDPOINT: "https://fly.storage.tigris.dev",
-            },
-            secrets: [
-              {
-                name: "BUCKET_NAME",
-                env_var: "S3_BUCKET_NAME",
-              },
-              {
-                name: "S3_ACCESS_KEY",
-                env_var: "S3_ACCESS_KEY_ID",
-              },
-              {
-                name: "S3_SECRET_KEY",
-                env_var: "S3_SECRET_ACCESS_KEY",
-              },
-            ],
-            restart: {
-              policy: "no",
-            },
-            healthchecks: [
-              {
-                http: {
-                  port: 9567,
-                  method: "head",
-                  path: "/metrics",
-                  scheme: "http",
-                },
-                failure_threshold: 10,
-                success_threshold: 1,
-                interval: 10,
-                grace_period: 15,
-              },
-            ],
-          },
-          {
-            name: "weldr-agent",
-            image: "registry.fly.io/weldr-images:weldr-agent",
-            // @ts-ignore - the config is not typed correctly
-            mounts: [
-              {
-                name: "shared",
-                path: "/data",
-              },
-            ],
-            secrets: [
-              {
-                env_var: "FLY_PRODUCTION_DEPLOY_TOKEN",
-              },
-            ],
-            depends_on: [
-              {
-                name: "storage",
-                condition: "healthy",
-              },
-            ],
-            restart: {
-              policy: "always",
-            },
-            healthchecks: [
-              {
-                name: "agent-health",
-                http: {
-                  port: 8080,
-                  method: "GET",
-                  path: "/health",
-                  scheme: "http",
-                },
-                failure_threshold: 10,
-                success_threshold: 1,
-                interval: 10,
-                grace_period: 15,
-                timeout: 5,
-              },
-            ],
-            services: [
-              {
-                protocol: "tcp",
-                internal_port: 8080,
-                autostop: "stop",
-                autostart: true,
-                ports: [
-                  { port: 443, handlers: ["tls", "http"] },
-                  { port: 80, handlers: ["http"] },
-                ],
-              },
-            ],
-          },
-        ],
-      }) satisfies paths["/apps/{app_name}/machines"]["post"]["requestBody"]["content"]["application/json"]["config"],
+      ],
+    } satisfies paths["/apps/{app_name}/machines"]["post"]["requestBody"]["content"]["application/json"]["config"],
     preview: {
       guest: {
         cpu_kind: "shared",

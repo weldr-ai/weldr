@@ -12,7 +12,7 @@ import VerificationEmail from "@weldr/emails/verification-email";
 import { nanoid } from "@weldr/shared/nanoid";
 
 const stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
-  apiVersion: "2025-02-24.acacia",
+  apiVersion: "2025-10-29.clover",
 });
 
 const resend = new Resend(process.env.RESEND_API_KEY ?? "");

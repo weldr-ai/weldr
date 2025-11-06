@@ -1,13 +1,13 @@
 import { createRoute, z } from "@hono/zod-openapi";
 import type { UserContent } from "ai";
 
-import { auth } from "@weldr/auth";
 import { and, db, eq } from "@weldr/db";
 import { branches, projects } from "@weldr/db/schema";
 
 import { initVersion } from "@/ai/utils/init-version";
 import { insertMessages } from "@/ai/utils/insert-messages";
 import { getInstalledCategories } from "@/integrations/utils/get-installed-categories";
+import { auth } from "@/lib/auth";
 import { Git } from "@/lib/git";
 import { createRouter } from "@/lib/utils";
 import { workflow } from "@/workflow";

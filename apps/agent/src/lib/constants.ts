@@ -1,31 +1,5 @@
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const isDev = process.env.NODE_ENV === "development";
-
-export const WORKSPACE_DIR = isDev
-  ? path.resolve(__dirname, "../../.temp")
-  : "/workspace";
-
-/**
- * Get workspace directory for a specific project.
- * In development, creates project-specific workspace directories.
- * In production, returns the standard workspace directory.
- */
-export function getProjectWorkspaceDir(projectId: string): string {
-  if (isDev) {
-    return path.resolve(__dirname, "../../.temp", projectId);
-  }
-  return "/workspace";
-}
-
-export const BOILERPLATES_DIR = isDev
-  ? path.resolve(__dirname, "../../data/boilerplates")
-  : "/.weldr/data/boilerplates";
-
-export const SCRIPTS_DIR = isDev
-  ? path.resolve(__dirname, "../../scripts")
-  : "/.weldr/scripts";
+export const WORKSPACE_DIR = "/workspace";
+export const BRANCH_METADATA_FILE = "/workspace/.weldr-state.json";
+export const MAX_VOLUME_USAGE_PERCENT = 85;
+export const TARGET_VOLUME_USAGE_PERCENT = 70;
+export const VOLUME_SIZE_GB = 20;

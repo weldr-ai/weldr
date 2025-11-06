@@ -89,7 +89,7 @@ export async function recoverEnrichingJobs(): Promise<void> {
   }
 
   if (!project) {
-    throw new Error("Project not found");
+    return;
   }
 
   const logger = Logger.get({
