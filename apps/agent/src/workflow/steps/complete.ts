@@ -4,6 +4,7 @@ import { Logger } from "@weldr/shared/logger";
 
 import { syncBranchToS3 } from "@/lib/branch-state";
 import { build } from "@/lib/build";
+import { isLocalMode } from "@/lib/constants";
 import { stream } from "@/lib/stream-utils";
 import { createSnapshot } from "@/lib/tigris";
 import { createStep } from "../engine";
@@ -22,6 +23,41 @@ export const completeStep = createStep({
     logger.info("Starting complete step");
 
     try {
+      // In local mode, skip build and just mark as completed
+      // Dev servers are managed by the web app on-demand
+      if (isLocalMode()) {
+        logger.info("Local mode: skipping build");
+
+        // Mark version as completed
+        await db
+          .update(versions)
+          .set({
+            status: "completed",
+          })
+          .where(eq(versions.id, branch.headVersion.id));
+
+        logger.info("Version marked as completed");
+
+        const updatedVersion = {
+          ...branch.headVersion,
+          status: "completed" as const,
+        };
+
+        context.set("branch", { ...branch, headVersion: updatedVersion });
+
+        await stream(branch.headVersion.chatId, {
+          type: "update_branch",
+          data: {
+            ...branch,
+            headVersion: updatedVersion,
+          },
+        });
+
+        logger.info("Complete step completed successfully (local mode)");
+        return;
+      }
+
+      // Cloud mode: create snapshot, build, and upload to Tigris
       const bucketName = `project-${project.id}-branch-${branch.id}`;
       const snapshotName = branch.headVersion.id;
 

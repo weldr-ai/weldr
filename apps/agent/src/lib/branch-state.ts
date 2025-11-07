@@ -1,13 +1,10 @@
 import { promises as fs } from "node:fs";
+import path from "node:path";
 
 import { Logger } from "@weldr/shared/logger";
 
 import { runCommand } from "./commands";
-import {
-  BRANCH_METADATA_FILE,
-  resolveScriptPath,
-  WORKSPACE_DIR,
-} from "./constants";
+import { resolveScriptPath, WORKSPACE_BASE } from "./constants";
 
 export interface BranchMetadata {
   branchId: string;
@@ -21,9 +18,11 @@ export interface BranchState {
   branches: Record<string, BranchMetadata>;
 }
 
+const BRANCH_STATE_FILE = path.join(WORKSPACE_BASE, "global-state.json");
+
 export async function loadState(): Promise<BranchState> {
   try {
-    const content = await fs.readFile(BRANCH_METADATA_FILE, "utf-8");
+    const content = await fs.readFile(BRANCH_STATE_FILE, "utf-8");
     return JSON.parse(content) as BranchState;
   } catch (error) {
     if ((error as { code?: string }).code === "ENOENT") {
@@ -34,9 +33,9 @@ export async function loadState(): Promise<BranchState> {
 }
 
 export async function saveState(state: BranchState): Promise<void> {
-  const tmpFile = `${BRANCH_METADATA_FILE}.tmp`;
+  const tmpFile = `${BRANCH_STATE_FILE}.tmp`;
   await fs.writeFile(tmpFile, JSON.stringify(state, null, 2), "utf-8");
-  await fs.rename(tmpFile, BRANCH_METADATA_FILE);
+  await fs.rename(tmpFile, BRANCH_STATE_FILE);
 }
 
 export async function ensureBranchDir(
@@ -58,7 +57,7 @@ export async function ensureBranchDir(
     {
       env: {
         ...process.env,
-        WORKSPACE_BASE: WORKSPACE_DIR,
+        WORKSPACE_BASE: WORKSPACE_BASE,
         MAX_VOLUME_USAGE_PERCENT: process.env.MAX_VOLUME_USAGE_PERCENT || "85",
         TARGET_VOLUME_USAGE_PERCENT:
           process.env.TARGET_VOLUME_USAGE_PERCENT || "70",
@@ -166,7 +165,7 @@ export async function syncBranchToS3(
     {
       env: {
         ...process.env,
-        WORKSPACE_BASE: WORKSPACE_DIR,
+        WORKSPACE_BASE: WORKSPACE_BASE,
         S3_ACCESS_KEY_ID: process.env.S3_ACCESS_KEY_ID || "",
         S3_SECRET_ACCESS_KEY: process.env.S3_SECRET_ACCESS_KEY || "",
         S3_ENDPOINT: process.env.S3_ENDPOINT || defaultS3Endpoint,
@@ -220,7 +219,7 @@ export async function syncBranchFromS3(
     {
       env: {
         ...process.env,
-        WORKSPACE_BASE: WORKSPACE_DIR,
+        WORKSPACE_BASE: WORKSPACE_BASE,
         S3_ACCESS_KEY_ID: process.env.S3_ACCESS_KEY_ID || "",
         S3_SECRET_ACCESS_KEY: process.env.S3_SECRET_ACCESS_KEY || "",
         S3_ENDPOINT: process.env.S3_ENDPOINT || defaultS3Endpoint,
