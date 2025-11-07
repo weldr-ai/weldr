@@ -49,7 +49,15 @@ export const branchRouter = {
         });
       }
 
-      if (!forkedVersion.bucketSnapshotVersion) {
+      // Check if running in local mode
+      const isLocalMode =
+        process.env.WELDR_MODE?.toLowerCase() === "local" ||
+        (process.env.WELDR_MODE === undefined &&
+          process.env.NODE_ENV === "development");
+
+      // In local mode, only require commit hash (not bucket snapshot)
+      // In cloud mode, require both bucket snapshot and commit hash
+      if (!isLocalMode && !forkedVersion.bucketSnapshotVersion) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Source version does not have a snapshot",
@@ -90,51 +98,63 @@ export const branchRouter = {
       }
 
       const branchId = nanoid();
-      const sourceBucket = `project-${input.projectId}-branch-${forkedVersion.branchId}`;
-      const forkBucket = `project-${input.projectId}-branch-${branchId}`;
 
-      try {
-        await Tigris.bucket.fork(
-          sourceBucket,
-          forkBucket,
-          forkedVersion.bucketSnapshotVersion,
-        );
-
-        const [branch] = await ctx.db
-          .insert(branches)
-          .values({
-            id: branchId,
-            name: input.name,
-            description: input.description,
-            projectId: input.projectId,
-            type: input.type,
-            parentBranchId:
-              input.type === "stream" ? forkedVersion.branchId : null,
-            forkedFromVersionId: input.forkedFromVersionId,
-            forksetId,
-            userId: ctx.session.user.id,
-          })
-          .returning();
-
-        if (!branch) {
+      // In local mode, skip Tigris bucket fork
+      // In cloud mode, create bucket fork
+      if (!isLocalMode) {
+        if (!forkedVersion.bucketSnapshotVersion) {
           throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Failed to create branch",
+            code: "BAD_REQUEST",
+            message: "Source version does not have a snapshot",
           });
         }
 
-        return branch;
-      } catch (error) {
+        const sourceBucket = `project-${input.projectId}-branch-${forkedVersion.branchId}`;
+        const forkBucket = `project-${input.projectId}-branch-${branchId}`;
+
         try {
-          await Tigris.bucket.delete(forkBucket);
-        } catch (cleanupError) {
-          console.error(
-            "Failed to cleanup bucket after branch creation error:",
-            cleanupError,
+          await Tigris.bucket.fork(
+            sourceBucket,
+            forkBucket,
+            forkedVersion.bucketSnapshotVersion,
           );
+        } catch (error) {
+          try {
+            await Tigris.bucket.delete(forkBucket);
+          } catch (cleanupError) {
+            console.error(
+              "Failed to cleanup bucket after branch creation error:",
+              cleanupError,
+            );
+          }
+          throw error;
         }
-        throw error;
       }
+
+      const [branch] = await ctx.db
+        .insert(branches)
+        .values({
+          id: branchId,
+          name: input.name,
+          description: input.description,
+          projectId: input.projectId,
+          type: input.type,
+          parentBranchId:
+            input.type === "stream" ? forkedVersion.branchId : null,
+          forkedFromVersionId: input.forkedFromVersionId,
+          forksetId,
+          userId: ctx.session.user.id,
+        })
+        .returning();
+
+      if (!branch) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to create branch",
+        });
+      }
+
+      return branch;
     }),
   byIdOrMain: protectedProcedure
     .input(z.object({ id: z.string().optional(), projectId: z.string() }))

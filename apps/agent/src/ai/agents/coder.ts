@@ -4,6 +4,7 @@ import type z from "zod";
 import { db, eq } from "@weldr/db";
 import { declarations, tasks, versions } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
+import { getBranchDir } from "@weldr/shared/state";
 import type { addMessageItemSchema } from "@weldr/shared/validators/chats";
 
 import {
@@ -103,21 +104,24 @@ export async function coderAgent({
     });
   }
 
+  const branchDir = getBranchDir(project.id, branch.id);
+
   const commitHash = await Git.commit(
     branch.headVersion.message ?? "commit message",
     { name: user.name, email: user.email },
+    branchDir,
   );
 
-  logger.info("All tasks processed. Updating version progress to 'deploying'.");
+  logger.info("All tasks processed. Updating version progress to 'complete'.");
   await db
     .update(versions)
-    .set({ status: "deploying", commitHash })
+    .set({ status: "completed", commitHash })
     .where(eq(versions.id, branch.headVersion.id));
 
   // Update context with the new version status
   const updatedVersion = {
     ...branch.headVersion,
-    status: "deploying" as const,
+    status: "completed" as const,
     commitHash,
   };
 

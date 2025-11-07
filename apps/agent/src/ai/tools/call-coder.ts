@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db, eq } from "@weldr/db";
 import { branches, versions } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
+import { getBranchDir } from "@weldr/shared/state";
 import { planSchema, taskSchema } from "@weldr/shared/validators/plans";
 
 import { Git } from "@/lib/git";
@@ -51,6 +52,8 @@ export const callCoderTool = createTool({
         },
       });
 
+      const branchDir = getBranchDir(project.id, branch.id);
+
       let startCommit: string;
       if (branchDetails?.forkedFromVersion?.commitHash) {
         startCommit = branchDetails.forkedFromVersion.commitHash;
@@ -58,13 +61,13 @@ export const callCoderTool = createTool({
           extra: { commit: startCommit },
         });
       } else {
-        startCommit = await Git.headCommit();
+        startCommit = await Git.headCommit(branchDir);
         logger.info("Creating Git branch from current HEAD", {
           extra: { commit: startCommit },
         });
       }
 
-      await Git.checkoutBranch(branch.name, startCommit);
+      await Git.checkoutBranch(branch.name, startCommit, branchDir);
 
       logger.info("Created Git branch with meaningful name", {
         extra: { branchName: branch.name, commit: startCommit },

@@ -1,7 +1,6 @@
 import { promises as fs } from "node:fs";
 
 import { runCommand } from "@/lib/commands";
-import { WORKSPACE_DIR } from "@/lib/constants";
 import type {
   IntegrationCallbackResult,
   IntegrationPackageSets,
@@ -11,6 +10,7 @@ import { combineResults } from "./combine-results";
 
 export async function installPackages(
   packagesSets: IntegrationPackageSets,
+  branchDir: string,
 ): Promise<IntegrationCallbackResult> {
   const results: IntegrationCallbackResult[] = [];
 
@@ -36,7 +36,7 @@ export async function installPackages(
           `pnpm add ${runtimeInstallCommand.join(" ")} -F @repo/${target}`,
         ],
         {
-          cwd: WORKSPACE_DIR,
+          cwd: branchDir,
         },
       );
 
@@ -51,7 +51,7 @@ export async function installPackages(
           `pnpm add -D ${developmentInstallCommand.join(" ")} -F @repo/${target}`,
         ],
         {
-          cwd: WORKSPACE_DIR,
+          cwd: branchDir,
         },
       );
 
@@ -64,6 +64,7 @@ export async function installPackages(
 
 export async function updatePackageJsonScripts(
   scriptSets: IntegrationScriptSets,
+  branchDir: string,
 ): Promise<IntegrationCallbackResult> {
   try {
     const results: IntegrationCallbackResult[] = [];
@@ -71,8 +72,8 @@ export async function updatePackageJsonScripts(
     for (const scriptSet of scriptSets) {
       const directory =
         scriptSet.target === "root"
-          ? WORKSPACE_DIR
-          : `${WORKSPACE_DIR}/apps/${scriptSet.target}`;
+          ? branchDir
+          : `${branchDir}/apps/${scriptSet.target}`;
 
       let packageJsonContent: {
         scripts?: Record<string, string>;
@@ -134,9 +135,10 @@ export async function updatePackageJsonScripts(
 
 export async function runPnpmScript(
   script: string,
+  branchDir: string,
 ): Promise<IntegrationCallbackResult> {
   const result = await runCommand("pnpm", ["run", script], {
-    cwd: WORKSPACE_DIR,
+    cwd: branchDir,
   });
 
   if (result.success) {

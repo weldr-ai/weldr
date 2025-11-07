@@ -3,13 +3,13 @@ import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@weldr/auth";
 import { and, db, eq } from "@weldr/db";
 import { projects } from "@weldr/db/schema";
+import { isLocalMode } from "@weldr/shared/state";
 
 import {
   getDevServer,
   startDevServer,
   updateLastAccessed,
 } from "@/lib/dev-server-manager";
-import { isLocalMode } from "@/lib/mode";
 
 export async function GET(
   request: NextRequest,

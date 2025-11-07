@@ -1,6 +1,7 @@
-import { and, db, eq, or } from "@weldr/db";
+import { and, db, eq, inArray } from "@weldr/db";
 import { projects, users, versions } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
+import { getActiveProjectIds, isLocalMode } from "@weldr/shared/state";
 
 import { getInstalledCategories } from "@/integrations/utils/get-installed-categories";
 import { WorkflowContext } from "./context";
@@ -21,16 +22,29 @@ export const workflow = createWorkflow({
 
 export async function recoverWorkflow() {
   Logger.info("Recovering workflow");
-  let project: typeof projects.$inferSelect | undefined;
 
-  if (process.env.NODE_ENV === "development") {
-    project = await db.query.projects.findFirst({
-      orderBy: (projects, { desc }) => [desc(projects.createdAt)],
-    });
-  } else if (process.env.NODE_ENV === "production") {
-    project = await db.query.projects.findFirst({
-      // biome-ignore lint/style/noNonNullAssertion: reason
-      where: eq(projects.id, process.env.PROJECT_ID!),
+  let projectsList: Array<
+    typeof projects.$inferSelect & {
+      integrations?: Array<{
+        integrationTemplate: {
+          category: unknown;
+        };
+      }>;
+    }
+  > = [];
+
+  if (isLocalMode()) {
+    // In local mode, recover projects based on IDs saved in metadata file
+    const activeProjectIds = getActiveProjectIds();
+
+    if (activeProjectIds.length === 0) {
+      Logger.info("No active projects found in metadata file");
+      return;
+    }
+
+    // Query projects by IDs from metadata file
+    const projectsFromMetadata = await db.query.projects.findMany({
+      where: inArray(projects.id, activeProjectIds),
       with: {
         integrations: {
           with: {
@@ -43,41 +57,70 @@ export async function recoverWorkflow() {
         },
       },
     });
+
+    projectsList = projectsFromMetadata;
+  } else {
+    // In cloud mode, each machine handles one project via PROJECT_ID
+    if (!process.env.PROJECT_ID) {
+      Logger.warn("PROJECT_ID not set in cloud mode");
+      return;
+    }
+
+    const project = await db.query.projects.findFirst({
+      where: eq(projects.id, process.env.PROJECT_ID),
+      with: {
+        integrations: {
+          with: {
+            integrationTemplate: {
+              with: {
+                category: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    if (project) {
+      projectsList = [project];
+    }
   }
 
-  if (!project) {
+  if (projectsList.length === 0) {
     return;
   }
 
-  const installedCategories = await getInstalledCategories(project.id);
+  for (const project of projectsList) {
+    const installedCategories = await getInstalledCategories(project.id);
 
-  const user = await db.query.users.findFirst({
-    where: eq(users.id, project.userId),
-  });
-
-  if (!user) {
-    throw new Error("User not found");
-  }
-
-  const versionsList = await db.query.versions.findMany({
-    where: and(
-      eq(versions.projectId, project.id),
-      or(eq(versions.status, "coding"), eq(versions.status, "deploying")),
-    ),
-    with: {
-      branch: true,
-    },
-  });
-
-  for (const version of versionsList) {
-    const context = new WorkflowContext();
-    context.set("project", {
-      ...project,
-      integrationCategories: new Set(installedCategories),
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, project.userId),
     });
-    context.set("branch", { ...version.branch, headVersion: version });
-    context.set("user", user);
-    await workflow.execute({ context });
-    Logger.info(`Recovered workflow for version ${version.id}`);
+
+    if (!user) {
+      Logger.warn(`User not found for project ${project.id}`);
+      continue;
+    }
+
+    const versionsList = await db.query.versions.findMany({
+      where: and(
+        eq(versions.projectId, project.id),
+        eq(versions.status, "coding"),
+      ),
+      with: {
+        branch: true,
+      },
+    });
+
+    for (const version of versionsList) {
+      const context = new WorkflowContext();
+      context.set("project", {
+        ...project,
+        integrationCategories: new Set(installedCategories),
+      });
+      context.set("branch", { ...version.branch, headVersion: version });
+      context.set("user", user);
+      await workflow.execute({ context });
+      Logger.info(`Recovered workflow for version ${version.id}`);
+    }
   }
 }

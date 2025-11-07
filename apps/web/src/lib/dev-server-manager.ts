@@ -1,46 +1,25 @@
 import { type ChildProcess, spawn } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
-import { homedir } from "node:os";
 import { join } from "node:path";
 
-import { trackProjectActivity } from "./metadata";
+import {
+  DEV_SERVERS_FILE,
+  type DevServerMetadata,
+  type DevServersState,
+  getBranchDir,
+  trackProjectActivity,
+} from "@weldr/shared/state";
 
 // Port range: 9000-9009 (10 ports total)
 const PORT_RANGE_START = 9000;
 const PORT_RANGE_END = 9009;
 const MAX_SERVERS = 10;
 
-// Dev servers are only used in local mode (local development)
-// In cloud mode, preview requests are routed to Fly.io machines
-const WORKSPACE_BASE = join(homedir(), ".weldr");
-
-/**
- * Get the branch directory path
- * Local mode only: ~/.weldr/{projectId}/{branchId}
- */
-function getBranchDir(projectId: string, branchId: string): string {
-  return join(WORKSPACE_BASE, projectId, branchId);
-}
-
-interface DevServerMetadata {
-  projectId: string;
-  branchId: string;
-  port: number;
-  pid: number;
-  lastAccessed: number;
-  startedAt: number;
-  command: string;
-}
-
-interface DevServersState {
-  servers: DevServerMetadata[];
-}
-
 // Track running processes in memory
 const runningProcesses = new Map<string, ChildProcess>();
 
-const METADATA_FILE = join(WORKSPACE_BASE, "dev-servers.json");
+const METADATA_FILE = DEV_SERVERS_FILE;
 
 /**
  * Load dev servers metadata from disk
@@ -49,7 +28,7 @@ function loadMetadata(): DevServersState {
   try {
     if (existsSync(METADATA_FILE)) {
       const content = readFileSync(METADATA_FILE, "utf-8");
-      return JSON.parse(content);
+      return JSON.parse(content) as DevServersState;
     }
   } catch (error) {
     console.warn("Failed to load dev servers metadata", error);

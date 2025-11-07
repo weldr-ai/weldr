@@ -1,9 +1,9 @@
 import fs from "node:fs/promises";
+import path from "node:path";
 import simpleGit from "simple-git";
 
 import { Logger } from "@weldr/shared/logger";
-
-import { WORKSPACE_DIR } from "./constants";
+import { getBranchDir, isLocalMode, WORKSPACE_BASE } from "@weldr/shared/state";
 
 const TRUNK_BRANCH = "main";
 
@@ -20,23 +20,43 @@ export namespace Git {
 
   /**
    * Initialize repo on TRUNK_BRANCH with an initial empty commit.
+   * @param projectId - The project ID (required in local mode if branchDir not provided)
+   * @param branchId - The branch ID (required in local mode if branchDir not provided)
+   * @param branchDir - The branch directory path (optional, will be calculated if not provided)
    */
-  export async function initRepository(): Promise<void> {
+  export async function initRepository(
+    projectId: string | undefined,
+    branchId: string | undefined,
+    branchDir?: string,
+  ): Promise<string> {
+    const repoPath =
+      branchDir ??
+      (isLocalMode() && projectId && branchId
+        ? getBranchDir(projectId, branchId)
+        : undefined);
+
+    if (!repoPath) {
+      throw new Error(
+        "initRepository requires either branchDir or both projectId and branchId in local mode",
+      );
+    }
+
     const logger = Logger.get({
       operation: "git-init",
-      repoPath: WORKSPACE_DIR,
+      repoPath,
     });
 
     try {
-      await fs.mkdir(WORKSPACE_DIR, { recursive: true });
+      await fs.mkdir(repoPath, { recursive: true });
 
       // Initialize and set trunk branch explicitly
-      const git = simpleGit(WORKSPACE_DIR);
+      const git = simpleGit(repoPath);
       await git.raw(["init", "-b", TRUNK_BRANCH]);
 
       // Create an initial empty commit so splits/branches have a base
       await git.add(".");
-      logger.info("Repository initialized");
+      logger.info("Repository initialized", { extra: { repoPath } });
+      return repoPath;
     } catch (error) {
       logger.error("Failed to initialize repository", { extra: { error } });
       throw error;
@@ -49,15 +69,17 @@ export namespace Git {
    * @param message - The commit message
    * @param author - The author name for the commit
    * @param email - The author email for the commit
+   * @param branchDir - The branch directory path
    * @returns The commit hash
    * @throws {Error} When commit creation fails
    */
   export async function commit(
     message: string,
     author: { name: string; email: string },
+    branchDir: string,
   ): Promise<string> {
     const logger = Logger.get({ operation: "git-commit" });
-    const git = simpleGit(WORKSPACE_DIR);
+    const git = simpleGit(branchDir);
 
     try {
       await git.add(".");
@@ -80,12 +102,14 @@ export namespace Git {
    * Create or checkout a branch.
    * @param branchName - The name of the branch to create
    * @param startRef - The starting ref (branch name or commit hash)
-   * @returns The workspace directory
+   * @param branchDir - The branch directory path
+   * @returns The branch directory
    * @throws {Error} When branch creation fails
    */
   export async function checkoutBranch(
     branchName: string,
-    startRef?: string,
+    startRef: string | undefined,
+    branchDir: string,
   ): Promise<string> {
     const logger = Logger.get({
       operation: "git-checkout-branch",
@@ -93,11 +117,11 @@ export namespace Git {
       startRef,
     });
 
-    const git = simpleGit(WORKSPACE_DIR);
+    const git = simpleGit(branchDir);
 
     try {
       // Check if branch exists
-      const branchExists = await checkBranchExists(branchName);
+      const branchExists = await checkBranchExists(branchName, branchDir);
 
       if (branchExists) {
         // Branch exists, just checkout
@@ -116,7 +140,7 @@ export namespace Git {
         });
       }
 
-      return WORKSPACE_DIR;
+      return branchDir;
     } catch (error) {
       logger.error("Failed to checkout branch", { extra: { error } });
       throw error;
@@ -130,6 +154,8 @@ export namespace Git {
    * @param targetBranch - The target branch
    * @param message - The message for the commit
    * @param author - The author of the commit
+   * @param branchDir - The branch directory path
+   * @param opts - Optional merge options
    * @returns The hash of the new commit
    * @throws {Error} When squash merge fails
    */
@@ -138,6 +164,7 @@ export namespace Git {
     targetBranch: string,
     message: string,
     author: { name: string; email: string },
+    branchDir: string,
     opts?: {
       preflightRebase?: boolean;
       fetch?: boolean;
@@ -150,7 +177,7 @@ export namespace Git {
       targetBranch,
     });
 
-    const git = simpleGit(WORKSPACE_DIR);
+    const git = simpleGit(branchDir);
 
     if (opts?.fetch) {
       try {
@@ -159,7 +186,7 @@ export namespace Git {
     }
 
     // compute commits that will be squashed (for message + co-authors)
-    const commits = await commitsBetween(targetBranch, sourceBranch);
+    const commits = await commitsBetween(targetBranch, sourceBranch, branchDir);
     const coauthors = Array.from(
       new Map(
         commits.map((c) => [
@@ -243,20 +270,22 @@ export namespace Git {
    * @param targetBranch - The target branch
    * @param commitHash - The hash of the commit to revert
    * @param message - The message for the revert commit
+   * @param branchDir - The branch directory path
    * @returns The hash of the new revert commit
    * @throws {Error} When revert commit fails
    */
   export async function revert(
     targetBranch: string,
     commitHash: string,
-    message?: string,
+    message: string | undefined,
+    branchDir: string,
   ): Promise<string> {
     const logger = Logger.get({
       operation: "git-revert",
       targetBranch,
       commitHash,
     });
-    const git = simpleGit(WORKSPACE_DIR);
+    const git = simpleGit(branchDir);
 
     try {
       await git.checkout(targetBranch);
@@ -275,19 +304,187 @@ export namespace Git {
 
   /**
    * Get the hash of the head commit.
+   * @param branchDir - The branch directory path
    * @returns The hash of the head commit
    */
-  export async function headCommit(): Promise<string> {
-    const git = simpleGit(WORKSPACE_DIR);
+  export async function headCommit(branchDir: string): Promise<string> {
+    const git = simpleGit(branchDir);
     return (await git.revparse(["HEAD"])).trim();
   }
 
   /**
    * Check if a git repository exists.
+   * @param repoPath - The path to check
    * @returns True if the git repository exists, false otherwise
    */
-  export async function hasGitRepository(): Promise<boolean> {
-    return await exists(WORKSPACE_DIR);
+  export async function hasGitRepository(repoPath: string): Promise<boolean> {
+    const gitDir = path.join(repoPath, ".git");
+    return await exists(gitDir);
+  }
+
+  /**
+   * Get the main git repository path from project ID and main branch ID.
+   * @param projectId - The project ID
+   * @param mainBranchId - The main branch ID
+   * @returns The path to the main git repository
+   */
+  export function getMainRepoPath(
+    projectId: string,
+    mainBranchId: string,
+  ): string {
+    if (isLocalMode()) {
+      return path.join(WORKSPACE_BASE, projectId, mainBranchId);
+    }
+    // Cloud mode: flat structure with just branchId (one project per machine)
+    return path.join(WORKSPACE_BASE, mainBranchId);
+  }
+
+  /**
+   * Get the branch workspace path.
+   * @param projectId - The project ID
+   * @param branchId - The branch ID
+   * @returns The path to the branch workspace
+   */
+  export function getBranchWorkspacePath(
+    projectId: string,
+    branchId: string,
+  ): string {
+    if (isLocalMode()) {
+      return path.join(WORKSPACE_BASE, projectId, branchId);
+    }
+    // Cloud mode: flat structure with just branchId (one project per machine)
+    return path.join(WORKSPACE_BASE, branchId);
+  }
+
+  /**
+   * Ensure the main git repository exists and is initialized.
+   * @param projectId - The project ID
+   * @param mainBranchId - The main branch ID
+   * @returns The path to the main git repository
+   */
+  export async function ensureMainRepo(
+    projectId: string,
+    mainBranchId: string,
+  ): Promise<string> {
+    const repoPath = getMainRepoPath(projectId, mainBranchId);
+    const logger = Logger.get({
+      operation: "git-ensure-main-repo",
+      repoPath,
+      projectId,
+      mainBranchId,
+    });
+
+    const hasRepo = await hasGitRepository(repoPath);
+    if (!hasRepo) {
+      logger.info("Main repository does not exist, initializing", {
+        extra: { repoPath },
+      });
+      // Initialize at the main repo path
+      await initRepository(projectId, mainBranchId, repoPath);
+    } else {
+      logger.info("Main repository already exists", { extra: { repoPath } });
+    }
+
+    return repoPath;
+  }
+
+  /**
+   * Create a git worktree from a commit hash.
+   * @param projectId - The project ID
+   * @param mainBranchId - The main branch ID (where the main repo is)
+   * @param branchId - The branch ID for the worktree
+   * @param commitHash - The commit hash to checkout
+   * @returns The path to the worktree
+   */
+  export async function createWorktree(
+    projectId: string,
+    mainBranchId: string,
+    branchId: string,
+    commitHash: string,
+  ): Promise<string> {
+    const logger = Logger.get({
+      operation: "git-create-worktree",
+      projectId,
+      mainBranchId,
+      branchId,
+      commitHash,
+    });
+
+    const mainRepoPath = getMainRepoPath(projectId, mainBranchId);
+    const worktreePath = getBranchWorkspacePath(projectId, branchId);
+
+    // Ensure main repo exists
+    await ensureMainRepo(projectId, mainBranchId);
+
+    const git = simpleGit(mainRepoPath);
+
+    try {
+      // Check if worktree already exists
+      const worktreeExists = await exists(worktreePath);
+      if (worktreeExists) {
+        logger.info("Worktree already exists", { extra: { worktreePath } });
+        return worktreePath;
+      }
+
+      // Create worktree from commit hash
+      await git.raw(["worktree", "add", worktreePath, commitHash]);
+
+      logger.info("Worktree created", {
+        extra: { worktreePath, commitHash },
+      });
+
+      return worktreePath;
+    } catch (error) {
+      logger.error("Failed to create worktree", {
+        extra: { error, projectId, mainBranchId, branchId, commitHash },
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Remove a git worktree.
+   * @param projectId - The project ID
+   * @param mainBranchId - The main branch ID (where the main repo is)
+   * @param branchId - The branch ID for the worktree to remove
+   */
+  export async function removeWorktree(
+    projectId: string,
+    mainBranchId: string,
+    branchId: string,
+  ): Promise<void> {
+    const logger = Logger.get({
+      operation: "git-remove-worktree",
+      projectId,
+      mainBranchId,
+      branchId,
+    });
+
+    const mainRepoPath = getMainRepoPath(projectId, mainBranchId);
+    const worktreePath = getBranchWorkspacePath(projectId, branchId);
+
+    const git = simpleGit(mainRepoPath);
+
+    try {
+      // Check if worktree exists
+      const worktreeExists = await exists(worktreePath);
+      if (!worktreeExists) {
+        logger.info("Worktree does not exist, nothing to remove", {
+          extra: { worktreePath },
+        });
+        return;
+      }
+
+      // Remove worktree
+      await git.raw(["worktree", "remove", worktreePath]);
+
+      logger.info("Worktree removed", { extra: { worktreePath } });
+    } catch (error) {
+      logger.error("Failed to remove worktree", {
+        extra: { error, projectId, mainBranchId, branchId },
+      });
+      throw error;
+    }
   }
 
   /**
@@ -307,11 +504,15 @@ export namespace Git {
   /**
    * Check if a local branch exists.
    * @param branchName - The name of the branch to check
+   * @param branchDir - The branch directory path
    * @returns True if the branch exists, false otherwise
    * @throws {Error} When checking for branch existence fails
    */
-  async function checkBranchExists(branchName: string): Promise<boolean> {
-    const git = simpleGit(WORKSPACE_DIR);
+  async function checkBranchExists(
+    branchName: string,
+    branchDir: string,
+  ): Promise<boolean> {
+    const git = simpleGit(branchDir);
     try {
       // exits 0 if ref exists
       await git.raw(["show-ref", "--verify", `refs/heads/${branchName}`]);
@@ -325,11 +526,13 @@ export namespace Git {
    * Get the commits between two refs.
    * @param fromRef - The from ref
    * @param toRef - The to ref
+   * @param branchDir - The branch directory path
    * @returns The commits between the two refs
    */
   async function commitsBetween(
     fromRef: string,
     toRef: string,
+    branchDir: string,
   ): Promise<
     Array<{
       hash: string;
@@ -339,7 +542,7 @@ export namespace Git {
       authorEmail: string;
     }>
   > {
-    const git = simpleGit(WORKSPACE_DIR);
+    const git = simpleGit(branchDir);
     // commits that are in source but not in target (i.e., target..source)
     const range = `${fromRef}..${toRef}`;
     const format = ["%H", "%s", "%b", "%an", "%ae"].join("%x1f"); // unit sep

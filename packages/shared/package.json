@@ -14,7 +14,8 @@
     "./machine-lookup-store": "./src/machine-lookup-store.ts",
     "./nanoid": "./src/nanoid.ts",
     "./logger": "./src/logger.ts",
-    "./process-text": "./src/process-text.ts"
+    "./process-text": "./src/process-text.ts",
+    "./state": "./src/state/index.ts"
   },
   "scripts": {
     "clean": "git clean -xdf .turbo node_modules dist",

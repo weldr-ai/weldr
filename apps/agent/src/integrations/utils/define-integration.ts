@@ -1,4 +1,5 @@
 import { Logger } from "@weldr/shared/logger";
+import { getBranchDir } from "@weldr/shared/state";
 import type { Integration, IntegrationKey } from "@weldr/shared/types";
 
 import type { WorkflowContext } from "@/workflow/context";
@@ -21,6 +22,8 @@ export function defineIntegration<K extends IntegrationKey>(
     }) => {
       try {
         const project = context.get("project");
+        const branch = context.get("branch");
+        const branchDir = getBranchDir(project.id, branch.id);
 
         const options = integration?.options as
           | ExtractOptionsForKey<K>
@@ -30,8 +33,8 @@ export function defineIntegration<K extends IntegrationKey>(
         const scripts = (await props.scripts?.(context, options)) ?? [];
 
         const results = await Promise.all([
-          updatePackageJsonScripts(scripts),
-          installPackages(packages),
+          updatePackageJsonScripts(scripts, branchDir),
+          installPackages(packages, branchDir),
           seedDeclarationTemplates({
             integration,
             context,

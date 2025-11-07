@@ -2,6 +2,7 @@ import { createRoute, z } from "@hono/zod-openapi";
 
 import { and, db, eq } from "@weldr/db";
 import { branches, projects, versions } from "@weldr/db/schema";
+import { getBranchDir } from "@weldr/shared/state";
 
 import { auth } from "@/lib/auth";
 import { Git } from "@/lib/git";
@@ -105,8 +106,10 @@ router.openapi(route, async (c) => {
   }
 
   try {
+    const branchDir = getBranchDir(projectId, branchId);
+
     // Ensure git repository exists
-    if (!(await Git.hasGitRepository())) {
+    if (!(await Git.hasGitRepository(branchDir))) {
       return c.json({ error: "Git repository not initialized" }, 400);
     }
 
@@ -115,6 +118,7 @@ router.openapi(route, async (c) => {
       branch.name,
       version.commitHash,
       `revert: revert to #${version.sequenceNumber} ${version.message}`,
+      branchDir,
     );
 
     return c.json({ success: true, commitHash });

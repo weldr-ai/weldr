@@ -3,6 +3,7 @@ import type { UserContent } from "ai";
 
 import { and, db, eq } from "@weldr/db";
 import { branches, projects } from "@weldr/db/schema";
+import { getBranchDir } from "@weldr/shared/state";
 
 import { initVersion } from "@/ai/utils/init-version";
 import { insertMessages } from "@/ai/utils/insert-messages";
@@ -125,8 +126,10 @@ router.openapi(route, async (c) => {
   let activeVersion =
     branch.headVersion?.status !== "completed" ? branch.headVersion : null;
 
-  if (!(await Git.hasGitRepository())) {
-    await Git.initRepository();
+  const branchDir = getBranchDir(projectId, branchId);
+
+  if (!(await Git.hasGitRepository(branchDir))) {
+    await Git.initRepository(projectId, branchId, branchDir);
   }
 
   if (!activeVersion) {

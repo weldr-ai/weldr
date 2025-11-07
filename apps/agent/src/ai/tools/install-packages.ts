@@ -1,9 +1,9 @@
 import { z } from "zod";
 
 import { Logger } from "@weldr/shared/logger";
+import { getBranchDir } from "@weldr/shared/state";
 
 import { runCommand } from "@/lib/commands";
-import { WORKSPACE_DIR } from "@/lib/constants";
 import { createTool } from "./utils";
 
 export const installPackagesTool = createTool({
@@ -50,11 +50,13 @@ export const installPackagesTool = createTool({
       },
     });
 
+    const branchDir = getBranchDir(project.id, branch.id);
+
     const { stderr, exitCode, success } = await runCommand(
       "bun",
       ["add", ...input.packages.map((pkg) => pkg.name)],
       {
-        cwd: WORKSPACE_DIR,
+        cwd: branchDir,
       },
     );
 

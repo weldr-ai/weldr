@@ -1,24 +1,19 @@
 import { promises as fs } from "node:fs";
-import path from "node:path";
 
+import { and, db, eq } from "@weldr/db";
+import { branches, versions } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
+import {
+  BRANCH_STATE_FILE,
+  type BranchState,
+  getBranchDir,
+  isLocalMode,
+  WORKSPACE_BASE,
+} from "@weldr/shared/state";
 
 import { runCommand } from "./commands";
-import { resolveScriptPath, WORKSPACE_BASE } from "./constants";
-
-export interface BranchMetadata {
-  branchId: string;
-  projectId: string;
-  lastAccessedAt: string;
-  sizeBytes: number;
-  createdAt: string;
-}
-
-export interface BranchState {
-  branches: Record<string, BranchMetadata>;
-}
-
-const BRANCH_STATE_FILE = path.join(WORKSPACE_BASE, "global-state.json");
+import { resolveScriptPath } from "./constants";
+import { Git } from "./git";
 
 export async function loadState(): Promise<BranchState> {
   try {
@@ -51,6 +46,12 @@ export async function ensureBranchDir(
     extra: { branchId, projectId },
   });
 
+  // In local mode, use git worktrees instead of S3 sync
+  if (isLocalMode()) {
+    return await ensureBranchDirLocal(branchId, projectId);
+  }
+
+  // Cloud mode: use existing S3 sync approach
   const result = await runCommand(
     resolveScriptPath("create-branch-dir.sh"),
     [branchId, projectId],
@@ -141,6 +142,119 @@ export async function ensureBranchDir(
   }
 
   return { branchDir, status };
+}
+
+/**
+ * Ensure branch directory exists in local mode using git worktrees.
+ * For main branch: uses main repository directory directly.
+ * For feature branches: creates git worktree from commit hash.
+ */
+async function ensureBranchDirLocal(
+  branchId: string,
+  projectId: string,
+): Promise<{
+  branchDir: string;
+  status: "created" | "reused";
+}> {
+  const logger = Logger.get();
+
+  // Get branch information from database
+  const branch = await db.query.branches.findFirst({
+    where: eq(branches.id, branchId),
+    columns: {
+      id: true,
+      isMain: true,
+      forkedFromVersionId: true,
+    },
+  });
+
+  if (!branch) {
+    throw new Error(`Branch not found: ${branchId}`);
+  }
+
+  // Get main branch ID for the project
+  const mainBranch = await db.query.branches.findFirst({
+    where: and(eq(branches.projectId, projectId), eq(branches.isMain, true)),
+    columns: {
+      id: true,
+    },
+  });
+
+  if (!mainBranch) {
+    throw new Error(`Main branch not found for project: ${projectId}`);
+  }
+
+  const mainBranchId = mainBranch.id;
+  const branchDir = getBranchDir(projectId, branchId);
+
+  // For main branch: use main repository directory directly
+  if (branch.isMain) {
+    logger.info("Main branch: using main repository directory", {
+      extra: { branchId, branchDir },
+    });
+
+    // Ensure main repository exists
+    await Git.ensureMainRepo(projectId, mainBranchId);
+
+    // Check if directory already exists
+    const exists = await fs
+      .access(branchDir)
+      .then(() => true)
+      .catch(() => false);
+
+    return {
+      branchDir,
+      status: exists ? "reused" : "created",
+    };
+  }
+
+  // For feature branches: create git worktree from commit hash
+  if (!branch.forkedFromVersionId) {
+    throw new Error(
+      `Feature branch ${branchId} must have a forkedFromVersionId`,
+    );
+  }
+
+  // Get the commit hash from the forked version
+  const forkedVersion = await db.query.versions.findFirst({
+    where: eq(versions.id, branch.forkedFromVersionId),
+    columns: {
+      commitHash: true,
+    },
+  });
+
+  if (!forkedVersion || !forkedVersion.commitHash) {
+    throw new Error(
+      `Forked version ${branch.forkedFromVersionId} does not have a commit hash`,
+    );
+  }
+
+  logger.info("Feature branch: creating git worktree", {
+    extra: { branchId, commitHash: forkedVersion.commitHash },
+  });
+
+  // Check if worktree already exists
+  const worktreeExists = await fs
+    .access(branchDir)
+    .then(() => true)
+    .catch(() => false);
+
+  if (worktreeExists) {
+    logger.info("Worktree already exists", { extra: { branchDir } });
+    return { branchDir, status: "reused" };
+  }
+
+  // Create worktree from commit hash
+  await Git.createWorktree(
+    projectId,
+    mainBranchId,
+    branchId,
+    forkedVersion.commitHash,
+  );
+
+  logger.info("Worktree created", { extra: { branchDir } });
+
+  return { branchDir, status: "created" };
 }
 
 export async function syncBranchToS3(

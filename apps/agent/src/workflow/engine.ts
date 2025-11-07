@@ -141,8 +141,7 @@ export function createWorkflow(
 
       switch (currentStep) {
         case "planning":
-        case "coding":
-        case "deploying": {
+        case "coding": {
           await stream(branch.headVersion.chatId, {
             type: "status",
             status: currentStep,

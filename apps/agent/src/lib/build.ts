@@ -3,9 +3,9 @@ import { join } from "node:path";
 import { put as tigrisPut } from "@tigrisdata/storage";
 
 import { Logger } from "@weldr/shared/logger";
+import { getBranchDir } from "@weldr/shared/state";
 
 import { runCommand } from "./commands";
-import { WORKSPACE_DIR } from "./constants";
 
 interface BuildOptions {
   projectId: string;
@@ -29,7 +29,7 @@ export async function build({
 }: BuildOptions): Promise<BuildResult> {
   const logger = Logger.get({ projectId, versionId });
 
-  const dir = join(WORKSPACE_DIR, branchId);
+  const dir = getBranchDir(projectId, branchId);
 
   try {
     logger.info("Starting build process", { dir });

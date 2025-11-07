@@ -1,10 +1,10 @@
 import { db, eq } from "@weldr/db";
 import { versions } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
+import { isLocalMode } from "@weldr/shared/state";
 
 import { syncBranchToS3 } from "@/lib/branch-state";
 import { build } from "@/lib/build";
-import { isLocalMode } from "@/lib/constants";
 import { stream } from "@/lib/stream-utils";
 import { createSnapshot } from "@/lib/tigris";
 import { createStep } from "../engine";

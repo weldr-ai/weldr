@@ -1,9 +1,9 @@
 import { z } from "zod";
 
 import { Logger } from "@weldr/shared/logger";
+import { getBranchDir } from "@weldr/shared/state";
 
 import { runCommand } from "@/lib/commands";
-import { WORKSPACE_DIR } from "@/lib/constants";
 import { createTool } from "./utils";
 
 const grepMatchSchema = z.object({
@@ -80,6 +80,8 @@ export const grepTool = createTool({
 
     logger.info(`Starting grep search for pattern: ${pattern}`);
 
+    const branchDir = getBranchDir(project.id, branch.id);
+
     const args = ["--json", "--line-number", "--column"];
 
     if (ignoreCase) {
@@ -96,10 +98,10 @@ export const grepTool = createTool({
       args.push("--glob", filePattern);
     }
 
-    args.push(pattern, WORKSPACE_DIR);
+    args.push(pattern, branchDir);
 
     const { stdout, stderr, exitCode } = await runCommand("rg", args, {
-      cwd: WORKSPACE_DIR,
+      cwd: branchDir,
     });
 
     if (exitCode === null || exitCode > 1) {
@@ -128,7 +130,7 @@ export const grepTool = createTool({
           if (jsonLine.type === "match") {
             totalMatches++;
             const filePath = jsonLine.data.path.text.replace(
-              `${WORKSPACE_DIR}/`,
+              `${branchDir}/`,
               "",
             );
             filesMatched.add(filePath);

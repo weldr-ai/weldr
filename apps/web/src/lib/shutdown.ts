@@ -1,5 +1,6 @@
+import { isLocalMode } from "@weldr/shared/state";
+
 import { stopAllDevServers } from "./dev-server-manager";
-import { isLocalMode } from "./mode";
 
 let isShuttingDown = false;
 

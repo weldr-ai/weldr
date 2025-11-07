@@ -1,9 +1,9 @@
 import { z } from "zod";
 
 import { Logger } from "@weldr/shared/logger";
+import { getBranchDir } from "@weldr/shared/state";
 
 import { runShell } from "@/lib/commands";
-import { WORKSPACE_DIR } from "@/lib/constants";
 import { createTool } from "./utils";
 
 export const findTool = createTool({
@@ -55,8 +55,10 @@ export const findTool = createTool({
 
     logger.info(`Finding files with query: ${query}`);
 
+    const branchDir = getBranchDir(project.id, branch.id);
+
     // Build find command
-    let findCmd = `find "${WORKSPACE_DIR}"`;
+    let findCmd = `find "${branchDir}"`;
 
     // Exclude common unwanted directories
     findCmd +=
@@ -76,7 +78,7 @@ export const findTool = createTool({
 
     const command = findCmd;
     const { stdout, stderr, exitCode } = await runShell(command, {
-      cwd: WORKSPACE_DIR,
+      cwd: branchDir,
     });
 
     if (exitCode !== 0) {
@@ -116,7 +118,7 @@ export const findTool = createTool({
       .trim()
       .split("\n")
       .filter((line) => line.trim())
-      .map((path) => path.replace(`${WORKSPACE_DIR}/`, ""))
+      .map((path) => path.replace(`${branchDir}/`, ""))
       .filter((path) => path && path !== ".");
 
     const results = allResults.slice(0, maxResults);

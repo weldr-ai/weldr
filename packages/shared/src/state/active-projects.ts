@@ -1,33 +1,29 @@
 import { existsSync, readFileSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
-import { homedir } from "node:os";
 import { join } from "node:path";
 
-import { isLocalMode } from "./mode";
+import { isLocalMode, WORKSPACE_BASE } from "./workspace";
 
-// Active projects tracking is only used in local mode
-// In cloud mode, each project has its own Fly.io machine
-const WORKSPACE_BASE = join(homedir(), ".weldr");
-const ACTIVE_PROJECTS_FILE = join(WORKSPACE_BASE, "active-projects.json");
+const ACTIVE_PROJECTS_FILE = join(WORKSPACE_BASE, "weldr-active-projects.json");
 
-interface ActiveProject {
+export interface ActiveProject {
   projectId: string;
   lastActivityAt: number;
   branches: string[];
 }
 
-interface ActiveProjectsState {
+export interface ActiveProjectsState {
   projects: Record<string, ActiveProject>;
 }
 
 /**
- * Load active projects metadata
+ * Load active projects metadata from file
  */
 export function loadActiveProjects(): ActiveProjectsState {
   try {
     if (existsSync(ACTIVE_PROJECTS_FILE)) {
       const content = readFileSync(ACTIVE_PROJECTS_FILE, "utf-8");
-      return JSON.parse(content);
+      return JSON.parse(content) as ActiveProjectsState;
     }
   } catch (error) {
     console.warn("Failed to load active projects metadata", error);
@@ -83,18 +79,14 @@ export async function trackProjectActivity(
 }
 
 /**
- * Get all active project IDs
+ * Get all active project IDs from metadata file
+ * Returns empty array if not in local mode or if file doesn't exist
  */
 export function getActiveProjectIds(): string[] {
+  if (!isLocalMode()) {
+    return [];
+  }
+
   const state = loadActiveProjects();
   return Object.keys(state.projects);
-}
-
-/**
- * Remove project from active list
- */
-export async function removeActiveProject(projectId: string): Promise<void> {
-  const state = loadActiveProjects();
-  delete state.projects[projectId];
-  await saveActiveProjects(state);
 }
