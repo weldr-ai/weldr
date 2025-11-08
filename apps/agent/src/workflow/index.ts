@@ -7,7 +7,7 @@ import { getInstalledCategories } from "@/integrations/utils/get-installed-categ
 import { WorkflowContext } from "./context";
 import { createWorkflow } from "./engine";
 import { codeStep } from "./steps/code";
-import { completeStep } from "./steps/complete";
+import { finalizeStep } from "./steps/finalize";
 import { planStep } from "./steps/plan";
 
 export const workflow = createWorkflow({
@@ -18,7 +18,7 @@ export const workflow = createWorkflow({
 })
   .onStatus(["pending", "planning"], planStep)
   .onStatus("coding", codeStep)
-  .onStatus("complete", completeStep);
+  .onStatus("finalize", finalizeStep);
 
 export async function recoverWorkflow() {
   Logger.info("Recovering workflow");

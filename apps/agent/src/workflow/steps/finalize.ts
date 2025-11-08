@@ -9,8 +9,8 @@ import { stream } from "@/lib/stream-utils";
 import { createSnapshot } from "@/lib/tigris";
 import { createStep } from "../engine";
 
-export const completeStep = createStep({
-  id: "complete",
+export const finalizeStep = createStep({
+  id: "finalize",
   execute: async ({ context }) => {
     const project = context.get("project");
     const branch = context.get("branch");
@@ -20,7 +20,7 @@ export const completeStep = createStep({
       versionId: branch.headVersion.id,
     });
 
-    logger.info("Starting complete step");
+    logger.info("Starting finalize step");
 
     try {
       // In local mode, skip build and just mark as completed
@@ -53,7 +53,7 @@ export const completeStep = createStep({
           },
         });
 
-        logger.info("Complete step completed successfully (local mode)");
+        logger.info("Finalize step completed successfully (local mode)");
         return;
       }
 
@@ -170,9 +170,9 @@ export const completeStep = createStep({
         },
       });
 
-      logger.info("Complete step completed successfully");
+      logger.info("Finalize step completed successfully");
     } catch (error) {
-      logger.error("Complete step failed", {
+      logger.error("Finalize step failed", {
         extra: { error },
       });
       throw error;

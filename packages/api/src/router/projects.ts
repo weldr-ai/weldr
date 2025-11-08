@@ -12,6 +12,7 @@ import {
 } from "@weldr/db/schema";
 import { Fly } from "@weldr/shared/fly";
 import { nanoid } from "@weldr/shared/nanoid";
+import { isLocalMode } from "@weldr/shared/state";
 import { Tigris } from "@weldr/shared/tigris";
 import {
   insertProjectSchema,
@@ -32,19 +33,23 @@ export const projectsRouter = {
 
       try {
         return await ctx.db.transaction(async (tx) => {
-          // The production app is created first
-          // so we can generate a deploy token for it
-          // to be used in the development app
-          productionAppId = await Fly.app.create({
-            type: "production",
-            projectId,
-          });
+          // Only create Fly apps and machines in cloud mode
+          // In local mode, skip Fly.io infrastructure creation
+          if (!isLocalMode()) {
+            // The production app is created first
+            // so we can generate a deploy token for it
+            // to be used in the development app
+            productionAppId = await Fly.app.create({
+              type: "production",
+              projectId,
+            });
 
-          developmentAppId = await Fly.app.create({
-            type: "development",
-            projectId,
-            branchId: mainBranchId,
-          });
+            developmentAppId = await Fly.app.create({
+              type: "development",
+              projectId,
+              branchId: mainBranchId,
+            });
+          }
 
           const [project] = await tx
             .insert(projects)
@@ -159,21 +164,26 @@ export const projectsRouter = {
           return project;
         });
       } catch (error) {
-        const promises = [];
+        // Only clean up Fly apps in cloud mode
+        if (!isLocalMode()) {
+          const promises = [];
 
-        if (developmentAppId) {
-          promises.push(Fly.app.destroy({ type: "development", projectId }));
-          promises.push(
-            Tigris.bucket.delete(`project-${projectId}-branch-${mainBranchId}`),
-          );
-          promises.push(Tigris.credentials.delete(projectId));
+          if (developmentAppId) {
+            promises.push(Fly.app.destroy({ type: "development", projectId }));
+            promises.push(
+              Tigris.bucket.delete(
+                `project-${projectId}-branch-${mainBranchId}`,
+              ),
+            );
+            promises.push(Tigris.credentials.delete(projectId));
+          }
+
+          if (productionAppId) {
+            promises.push(Fly.app.destroy({ type: "production", projectId }));
+          }
+
+          await Promise.all(promises);
         }
-
-        if (productionAppId) {
-          promises.push(Fly.app.destroy({ type: "production", projectId }));
-        }
-
-        await Promise.all(promises);
 
         console.error(error);
         if (error instanceof TRPCError) {
@@ -320,22 +330,25 @@ export const projectsRouter = {
           });
         }
 
-        await Promise.all([
-          Fly.app.destroy({
-            type: "development",
-            projectId: project.id,
-          }),
-          Fly.app.destroy({
-            type: "preview",
-            projectId: project.id,
-          }),
-          Fly.app.destroy({
-            type: "production",
-            projectId: project.id,
-          }),
-          Tigris.bucket.delete(`project-${project.id}`),
-          Tigris.credentials.delete(project.id),
-        ]);
+        // Only destroy Fly apps in cloud mode
+        if (!isLocalMode()) {
+          await Promise.all([
+            Fly.app.destroy({
+              type: "development",
+              projectId: project.id,
+            }),
+            Fly.app.destroy({
+              type: "preview",
+              projectId: project.id,
+            }),
+            Fly.app.destroy({
+              type: "production",
+              projectId: project.id,
+            }),
+            Tigris.bucket.delete(`project-${project.id}`),
+            Tigris.credentials.delete(project.id),
+          ]);
+        }
 
         await ctx.db
           .delete(projects)

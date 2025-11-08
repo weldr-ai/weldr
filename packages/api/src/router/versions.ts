@@ -12,6 +12,7 @@ import {
   versionDeclarations,
   versions,
 } from "@weldr/db/schema";
+import { isLocalMode } from "@weldr/shared/state";
 import { Tigris } from "@weldr/shared/tigris";
 import type {
   AssistantMessage,
@@ -319,17 +320,40 @@ export const versionRouter = {
         });
       }
 
-      if (!version.bucketSnapshotVersion) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Version does not have a snapshot",
-        });
+      // In local mode, require commitHash for git revert
+      // In cloud mode, require bucketSnapshotVersion for Tigris snapshot revert
+      if (isLocalMode()) {
+        if (!version.commitHash) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message:
+              "Version does not have a commit hash. Cannot revert in local mode without a commit hash.",
+          });
+        }
+      } else {
+        if (!version.bucketSnapshotVersion) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Version does not have a snapshot",
+          });
+        }
       }
 
-      const newSnapshotVersion = await Tigris.bucket.snapshot.revert(
-        `project-${input.projectId}-branch-${version.branch.id}`,
-        version.bucketSnapshotVersion,
-      );
+      // In cloud mode, revert Tigris snapshot first
+      let newSnapshotVersion: string | undefined;
+      if (!isLocalMode()) {
+        // We already checked that bucketSnapshotVersion exists above
+        if (!version.bucketSnapshotVersion) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Version does not have a snapshot",
+          });
+        }
+        newSnapshotVersion = await Tigris.bucket.snapshot.revert(
+          `project-${input.projectId}-branch-${version.branch.id}`,
+          version.bucketSnapshotVersion,
+        );
+      }
 
       const revertedVersion = await db.transaction(async (tx) => {
         const [revertedVersionChat] = await tx
@@ -367,6 +391,7 @@ export const versionRouter = {
             sequenceNumber: version.sequenceNumber + 1,
             projectId: input.projectId,
             userId: ctx.session.user.id,
+            // Only set bucketSnapshotVersion in cloud mode
             bucketSnapshotVersion: newSnapshotVersion,
             kind: "revert",
             revertedVersionId: version.id,

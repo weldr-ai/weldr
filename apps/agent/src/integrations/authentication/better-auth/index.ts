@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 
@@ -74,8 +75,7 @@ export const betterAuthIntegration = defineIntegration<"better-auth">({
     try {
       // Store secret in database
       await db.transaction(async (tx) => {
-        // Generate secret
-        const BETTER_AUTH_SECRET = "SECRET";
+        const BETTER_AUTH_SECRET = randomBytes(32).toString("base64");
 
         const [secret] = await tx
           .insert(secrets)

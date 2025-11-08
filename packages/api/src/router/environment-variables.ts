@@ -4,6 +4,7 @@ import { z } from "zod";
 import { and, eq } from "@weldr/db";
 import { environmentVariables, secrets } from "@weldr/db/schema";
 import { Fly } from "@weldr/shared/fly";
+import { isLocalMode } from "@weldr/shared/state";
 import { insertEnvironmentVariableSchema } from "@weldr/shared/validators/environment-variables";
 
 import { protectedProcedure } from "../init";
@@ -64,23 +65,26 @@ export const environmentVariablesRouter = {
         });
       }
 
-      await Promise.all([
-        Fly.secret.create({
-          type: "development",
-          projectId: input.projectId,
-          secrets: [{ key: input.key, value: input.value }],
-        }),
-        Fly.secret.create({
-          type: "preview",
-          projectId: input.projectId,
-          secrets: [{ key: input.key, value: input.value }],
-        }),
-        Fly.secret.create({
-          type: "production",
-          projectId: input.projectId,
-          secrets: [{ key: input.key, value: input.value }],
-        }),
-      ]);
+      // Only create Fly secrets in cloud mode
+      if (!isLocalMode()) {
+        await Promise.all([
+          Fly.secret.create({
+            type: "development",
+            projectId: input.projectId,
+            secrets: [{ key: input.key, value: input.value }],
+          }),
+          Fly.secret.create({
+            type: "preview",
+            projectId: input.projectId,
+            secrets: [{ key: input.key, value: input.value }],
+          }),
+          Fly.secret.create({
+            type: "production",
+            projectId: input.projectId,
+            secrets: [{ key: input.key, value: input.value }],
+          }),
+        ]);
+      }
 
       return environmentVariable;
     }),
@@ -135,22 +139,25 @@ export const environmentVariablesRouter = {
         .delete(environmentVariables)
         .where(eq(environmentVariables.id, input.id));
 
-      await Promise.all([
-        Fly.secret.destroy({
-          type: "development",
-          projectId: environmentVariable.projectId,
-          secretKeys: [environmentVariable.key],
-        }),
-        Fly.secret.destroy({
-          type: "preview",
-          projectId: environmentVariable.projectId,
-          secretKeys: [environmentVariable.key],
-        }),
-        Fly.secret.destroy({
-          type: "production",
-          projectId: environmentVariable.projectId,
-          secretKeys: [environmentVariable.key],
-        }),
-      ]);
+      // Only destroy Fly secrets in cloud mode
+      if (!isLocalMode()) {
+        await Promise.all([
+          Fly.secret.destroy({
+            type: "development",
+            projectId: environmentVariable.projectId,
+            secretKeys: [environmentVariable.key],
+          }),
+          Fly.secret.destroy({
+            type: "preview",
+            projectId: environmentVariable.projectId,
+            secretKeys: [environmentVariable.key],
+          }),
+          Fly.secret.destroy({
+            type: "production",
+            projectId: environmentVariable.projectId,
+            secretKeys: [environmentVariable.key],
+          }),
+        ]);
+      }
     }),
 } satisfies TRPCRouterRecord;
