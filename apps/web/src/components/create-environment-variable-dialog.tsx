@@ -3,6 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { EyeIcon, EyeOffIcon, LoaderIcon, PlusIcon } from "lucide-react";
+import { useParams } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
@@ -31,12 +32,11 @@ import { toast } from "@weldr/ui/hooks/use-toast";
 import { useTRPC } from "@/lib/trpc/react";
 
 export function CreateEnvironmentVariableDialog({
-  projectId,
   children,
 }: {
-  projectId: string;
   children?: React.ReactNode;
 }) {
+  const { projectId } = useParams<{ projectId: string }>();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [showValue, setShowValue] = useState(false);
 
@@ -55,9 +55,11 @@ export function CreateEnvironmentVariableDialog({
 
   const createEnvironmentVariable = useMutation(
     trpc.environmentVariables.create.mutationOptions({
-      onSuccess: (data) => {
-        void queryClient.invalidateQueries(
-          trpc.environmentVariables.list.queryFilter(),
+      onSuccess: async (data) => {
+        await queryClient.invalidateQueries(
+          trpc.environmentVariables.list.queryFilter({
+            projectId,
+          }),
         );
         if (data.id) {
           setIsDialogOpen(false);
@@ -154,12 +156,7 @@ export function CreateEnvironmentVariableDialog({
               )}
             />
             <div className="flex justify-end gap-2">
-              <Button
-                type="submit"
-                disabled={
-                  createEnvironmentVariable.isPending || !form.formState.isValid
-                }
-              >
+              <Button type="submit" disabled={!form.formState.isValid}>
                 {createEnvironmentVariable.isPending && (
                   <LoaderIcon className="size-4 animate-spin" />
                 )}

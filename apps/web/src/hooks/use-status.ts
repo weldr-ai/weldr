@@ -40,8 +40,8 @@ export function useStatus({ version, messages, project }: UseStatusOptions) {
       case "coding":
         setStatus("coding");
         break;
-      case "deploying":
-        setStatus("deploying");
+      case "finalizing":
+        setStatus("finalizing");
         break;
       case "completed":
       case "failed":

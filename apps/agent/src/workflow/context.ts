@@ -13,6 +13,8 @@ type WorkflowContextStore = {
     headVersion: typeof versions.$inferSelect;
   };
   user: User;
+  currentTaskId?: string;
+  activeTasks?: string[];
 };
 
 export class WorkflowContext {

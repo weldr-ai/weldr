@@ -34,7 +34,12 @@ export async function applyFiles({
 
   const logger = Logger.get({ projectId: integration.projectId });
 
+  logger.info(
+    `Generated ${files.length} files for integration ${integration.key}`,
+  );
+
   for (const file of files) {
+    logger.info(`Processing file: ${file.sourcePath} -> ${file.targetPath}`);
     const targetDir = path.dirname(file.targetPath);
     const fullTargetDir = path.resolve(branchDir, targetDir);
 
@@ -152,13 +157,28 @@ async function generateFiles({
 }): Promise<FileItem[]> {
   const project = context.get("project");
 
-  const hasFrontend = project.integrationCategories.has("frontend");
-  const hasBackend = project.integrationCategories.has("backend");
-  const hasNothing = !hasFrontend && !hasBackend;
+  const category = integrationRegistry.getIntegrationCategory(integration.key);
+
+  // Consider both what's installed AND the current integration's category
+  const hasFrontend =
+    project.integrationCategories.has("frontend") ||
+    category.key === "frontend";
+  const hasBackend =
+    project.integrationCategories.has("backend") || category.key === "backend";
+  const hasNothing =
+    !project.integrationCategories.has("frontend") &&
+    !project.integrationCategories.has("backend") &&
+    category.key !== "frontend" &&
+    category.key !== "backend";
 
   const logger = Logger.get({ projectId: integration.projectId });
 
-  const category = integrationRegistry.getIntegrationCategory(integration.key);
+  logger.info(
+    `Generating files for ${integration.key}: hasFrontend=${hasFrontend}, hasBackend=${hasBackend}, hasNothing=${hasNothing}`,
+  );
+  logger.info(
+    `Integration categories: ${Array.from(project.integrationCategories).join(", ")}, current category: ${category.key}`,
+  );
 
   let baseDataDir = path.join(
     path.resolve(__dirname, "../.."),
@@ -194,10 +214,16 @@ async function generateFiles({
 
   if (hasBackend || hasNothing) {
     const serverPath = path.join(baseDataDir, "server");
+    logger.info(
+      `Processing server files from ${serverPath} for ${integration.key}`,
+    );
     const serverFiles = await processDirectoryFiles(
       serverPath,
       "server",
       branchDir,
+    );
+    logger.info(
+      `Found ${serverFiles.length} server files for ${integration.key}`,
     );
     files.push(...serverFiles);
   }

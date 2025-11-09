@@ -1,7 +1,5 @@
 "use client";
 
-import { useQueryClient } from "@tanstack/react-query";
-import { useParams } from "next/navigation";
 import { useState } from "react";
 
 import type { RouterOutputs } from "@weldr/api";
@@ -17,17 +15,16 @@ import {
 import { cn } from "@weldr/ui/lib/utils";
 
 import { IntegrationConfigurationFields } from "@/components/integrations/shared";
-import { useTRPC } from "@/lib/trpc/react";
 import { getIntegrationIcon } from "../shared/utils";
 
-type EnvironmentVariable = RouterOutputs["environmentVariables"]["list"][0];
 type IntegrationTemplate = RouterOutputs["integrationTemplates"]["list"][0];
 
 interface ConfigureIntegrationDialogProps {
   integrationTemplate: IntegrationTemplate;
-  environmentVariables: EnvironmentVariable[];
+  environmentVariables: RouterOutputs["environmentVariables"]["list"];
   environmentVariableMappings: Record<string, string>;
   onEnvironmentVariableMapping: (configKey: string, envVarId: string) => void;
+  project: RouterOutputs["projects"]["byId"];
   isConfigured: boolean;
   disabled?: boolean;
   onConfirm: () => void;
@@ -38,19 +35,13 @@ export function ConfigureIntegrationDialog({
   integrationTemplate,
   environmentVariables,
   environmentVariableMappings,
+  project,
   onEnvironmentVariableMapping,
   isConfigured,
   disabled = false,
   onConfirm,
   onCancel,
 }: ConfigureIntegrationDialogProps) {
-  const trpc = useTRPC();
-  const queryClient = useQueryClient();
-  const { projectId } = useParams<{ projectId: string }>();
-  const project = queryClient.getQueryData(
-    trpc.projects.byId.queryKey({ id: projectId }),
-  );
-
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const requiredVariables = integrationTemplate.variables || [];
@@ -103,7 +94,6 @@ export function ConfigureIntegrationDialog({
           environmentVariables={environmentVariables}
           environmentVariableMappings={environmentVariableMappings}
           onEnvironmentVariableMapping={onEnvironmentVariableMapping}
-          projectId={project.id}
         />
         <div className="flex justify-end gap-2">
           {onCancel && (

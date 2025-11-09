@@ -20,6 +20,7 @@ import { Label } from "@weldr/ui/components/label";
 import { cn } from "@weldr/ui/lib/utils";
 
 import { SitePreviewDialog } from "@/components/site-preview-dialog";
+import { getPreviewUrl as buildPreviewUrl } from "@/lib/preview-url";
 import { useTRPC } from "@/lib/trpc/react";
 import type { CanvasNodeProps } from "@/types";
 import { ProtectedBadge } from "../components/protected-badge";
@@ -104,7 +105,11 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
       return "";
     }
 
-    const baseUrl = `https://${headVersion?.id}.preview.weldr.app`;
+    const baseUrl =
+      headVersion?.id && projectId && branch?.id
+        ? buildPreviewUrl(headVersion.id, projectId, branch.id)
+        : "";
+
     let route = specs?.route.replace(/^\//, "");
 
     const routeParameters = getRouteParameters();
@@ -121,7 +126,14 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
     }
 
     return `${baseUrl}/${route}`;
-  }, [headVersion?.id, specs, getRouteParameters, parameterValues]);
+  }, [
+    headVersion?.id,
+    projectId,
+    branch?.id,
+    specs,
+    getRouteParameters,
+    parameterValues,
+  ]);
 
   const canShowPreview = useCallback(() => {
     const routeParameters = getRouteParameters();

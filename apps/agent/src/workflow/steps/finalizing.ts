@@ -9,8 +9,8 @@ import { stream } from "@/lib/stream-utils";
 import { createSnapshot } from "@/lib/tigris";
 import { createStep } from "../engine";
 
-export const finalizeStep = createStep({
-  id: "finalize",
+export const finalizingStep = createStep({
+  id: "finalizing",
   execute: async ({ context }) => {
     const project = context.get("project");
     const branch = context.get("branch");

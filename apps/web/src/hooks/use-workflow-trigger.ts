@@ -1,7 +1,6 @@
 import { useCallback } from "react";
 
 import type {
-  Attachment,
   TriggerWorkflowResponse,
   TStatus,
   UserMessage,
@@ -25,7 +24,7 @@ export function useWorkflowTrigger({
   const triggerWorkflow = useCallback(
     async (message?: {
       content: UserMessage["content"];
-      attachments: Attachment[];
+      attachmentIds?: string[];
     }) => {
       try {
         const triggerResponse = await fetch("/api/proxy", {
@@ -59,7 +58,7 @@ export function useWorkflowTrigger({
   const triggerGeneration = useCallback(
     async (message?: {
       content: UserMessage["content"];
-      attachments: Attachment[];
+      attachmentIds?: string[];
     }) => {
       setStatus("thinking");
 

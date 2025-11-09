@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Trash2Icon } from "lucide-react";
+import { useParams } from "next/navigation";
 import { useState } from "react";
 
 import type { RouterOutputs } from "@weldr/api";
@@ -20,22 +21,23 @@ import { DeleteAlertDialog } from "@/components/delete-alert-dialog";
 import { useTRPC } from "@/lib/trpc/react";
 
 export function EnvSection({
-  env,
-  projectId,
+  environmentVariables,
 }: {
-  env: RouterOutputs["environmentVariables"]["list"];
-  projectId: string;
+  environmentVariables: RouterOutputs["environmentVariables"]["list"];
 }) {
+  const { projectId } = useParams<{ projectId: string }>();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const trpc = useTRPC();
 
   const deleteEnvironmentVariable = useMutation(
     trpc.environmentVariables.delete.mutationOptions({
       onSuccess: () => {
         queryClient.invalidateQueries(
-          trpc.environmentVariables.list.queryFilter(),
+          trpc.environmentVariables.list.queryFilter({
+            projectId,
+          }),
         );
         setDeleteDialogOpen(false);
       },
@@ -56,7 +58,7 @@ export function EnvSection({
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span>Environment Variables</span>
-          <CreateEnvironmentVariableDialog projectId={projectId} />
+          <CreateEnvironmentVariableDialog />
         </CardTitle>
         <CardDescription>
           Manage your project environment variables
@@ -64,7 +66,7 @@ export function EnvSection({
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
-          {env.map((envVar) => (
+          {environmentVariables.map((envVar) => (
             <div key={envVar.id} className="flex items-center justify-between">
               <span>{envVar.key}</span>
               <Button

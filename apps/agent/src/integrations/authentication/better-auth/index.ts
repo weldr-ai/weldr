@@ -36,6 +36,7 @@ export const betterAuthIntegration = defineIntegration<"better-auth">({
       name: "BETTER_AUTH_SECRET",
       source: "system",
       isRequired: true,
+      target: ["server"],
     },
   ],
   isRecommended: true,

@@ -10,8 +10,6 @@ import type {
 
 export type IntegrationTemplate =
   RouterOutputs["integrationTemplates"]["list"][0];
-export type EnvironmentVariable =
-  RouterOutputs["environmentVariables"]["list"][0];
 
 export interface IntegrationConfiguration {
   templateId: string;
@@ -68,11 +66,10 @@ export type IntegrationToolMessage = ChatMessage & {
 
 export interface IntegrationConfigurationProps {
   integrationTemplate: IntegrationTemplate;
-  environmentVariables: EnvironmentVariable[];
+  environmentVariables: RouterOutputs["environmentVariables"]["list"];
   environmentVariableMappings: Record<string, string>;
   onEnvironmentVariableMapping: (configKey: string, envVarId: string) => void;
   name?: string;
   onNameChange?: (name: string) => void;
   showNameField?: boolean;
-  projectId: string;
 }

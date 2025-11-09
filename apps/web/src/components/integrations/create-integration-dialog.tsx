@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2Icon, LoaderIcon } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useState } from "react";
@@ -40,17 +40,6 @@ export function CreateIntegrationDialog({
   const { projectId } = useParams<{ projectId: string }>();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-
-  const { data: environmentVariablesOptions } = useQuery(
-    trpc.environmentVariables.list.queryOptions(
-      {
-        projectId,
-      },
-      {
-        initialData: environmentVariables,
-      },
-    ),
-  );
 
   const requiredVariables = integrationTemplate.variables || [];
 
@@ -231,13 +220,12 @@ export function CreateIntegrationDialog({
           >
             <IntegrationConfigurationFields
               integrationTemplate={integrationTemplate}
-              environmentVariables={environmentVariablesOptions}
+              environmentVariables={environmentVariables}
               environmentVariableMappings={environmentVariableMappings}
               onEnvironmentVariableMapping={handleEnvironmentVariableMapping}
               name={form.watch("name")}
               onNameChange={handleNameChange}
               showNameField
-              projectId={projectId}
             />
             <div className="flex w-full justify-end">
               <Button

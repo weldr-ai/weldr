@@ -251,7 +251,7 @@ export function useEventStream({
               trpc.branches.byIdOrMain.queryKey({ id: branchId, projectId }),
               (old) => {
                 if (!old) return old;
-                return {
+                const updatedBranch = {
                   ...old,
                   ...chunk.data,
                   headVersion: {
@@ -259,6 +259,16 @@ export function useEventStream({
                     ...chunk.data.headVersion,
                   },
                 };
+                // Ensure branch name is updated if provided
+                if ("name" in chunk.data && chunk.data.name !== undefined) {
+                  updatedBranch.name = chunk.data.name as string;
+                }
+                // Ensure version message is updated if provided
+                if (chunk.data.headVersion?.message !== undefined) {
+                  updatedBranch.headVersion.message =
+                    chunk.data.headVersion.message;
+                }
+                return updatedBranch;
               },
             );
 
@@ -269,17 +279,19 @@ export function useEventStream({
               }),
             });
 
-            const status = branch.headVersion.status;
+            // Use the status from the updated branch data if available
+            const updatedStatus =
+              chunk.data.headVersion?.status ?? branch.headVersion.status;
 
-            switch (status) {
+            switch (updatedStatus) {
               case "planning":
                 setStatus("planning");
                 break;
               case "coding":
                 setStatus("coding");
                 break;
-              case "deploying":
-                setStatus("deploying");
+              case "finalizing":
+                setStatus("finalizing");
                 break;
               case "completed":
               case "failed":

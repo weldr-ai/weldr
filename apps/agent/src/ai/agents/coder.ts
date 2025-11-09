@@ -1,4 +1,4 @@
-import { streamText, type ToolSet } from "ai";
+import { stepCountIs, streamText, type ToolSet } from "ai";
 import type z from "zod";
 
 import { db, eq } from "@weldr/db";
@@ -55,11 +55,29 @@ export async function coderAgent({
 
   logger.info(`Execution plan retrieved with ${executionPlan.length} tasks.`);
 
+  context.set(
+    "activeTasks",
+    executionPlan.map((t) => t.id),
+  );
+
+  const allTaskContexts = await Promise.all(
+    executionPlan.map(async (task) => {
+      const { taskContext } = await createTaskContext(task);
+      return {
+        taskId: task.id,
+        taskName: task.data.summary,
+        context: taskContext,
+      };
+    }),
+  );
+
   const currentProgress: Map<
     string,
     {
       summary: string;
-      progress: "pending" | "in_progress" | "completed";
+      progress: "pending" | "in_progress" | "completed" | "failed" | "retrying";
+      retryAttempt?: number;
+      maxRetries?: number;
     }
   > = new Map();
 
@@ -68,13 +86,39 @@ export async function coderAgent({
 
     logger.info(`Processing task: ${taskName}`);
 
-    // Update task status to in_progress
+    const [currentTaskState] = await db
+      .select()
+      .from(tasks)
+      .where(eq(tasks.id, task.id));
+
+    if (currentTaskState?.status === "completed") {
+      logger.info(`Task ${taskName} already completed, skipping`);
+      currentProgress.set(task.id, {
+        summary: task.data.summary,
+        progress: "completed",
+      });
+
+      const declaration = task.declaration;
+      if (declaration) {
+        await db
+          .update(declarations)
+          .set({ progress: "completed" })
+          .where(eq(declarations.id, declaration.id));
+
+        await updateCanvasNode({ context, declarationId: declaration.id });
+      }
+
+      continue;
+    }
+
     await db
       .update(tasks)
       .set({ status: "in_progress" })
       .where(eq(tasks.id, task.id));
 
-    const { taskContext, declaration } = await createTaskContext(task);
+    context.set("currentTaskId", task.id);
+
+    const declaration = task.declaration;
 
     if (declaration) {
       await db
@@ -85,24 +129,100 @@ export async function coderAgent({
       await updateCanvasNode({ context, declarationId: declaration.id });
     }
 
-    await executeTaskWithContext(
-      task,
-      taskContext,
-      context,
-      currentProgress,
-      coolDownPeriod,
-    );
+    const maxRetries = 3;
+    let retryCount = 0;
+    let taskCompleted = false;
 
-    await db
-      .update(tasks)
-      .set({ status: "completed" })
-      .where(eq(tasks.id, task.id));
+    while (retryCount < maxRetries && !taskCompleted) {
+      try {
+        await executeTaskCoder({
+          context,
+          task,
+          progress: currentProgress,
+          allTaskContexts,
+          coolDownPeriod,
+        });
 
-    currentProgress.set(task.id, {
-      summary: task.data.summary,
-      progress: "completed",
-    });
+        const [updatedTask] = await db
+          .select()
+          .from(tasks)
+          .where(eq(tasks.id, task.id));
+
+        if (updatedTask?.status === "completed") {
+          logger.info(`Task "${taskName}" completed successfully`);
+          currentProgress.set(task.id, {
+            summary: task.data.summary,
+            progress: "completed",
+          });
+
+          if (declaration) {
+            await db
+              .update(declarations)
+              .set({ progress: "completed" })
+              .where(eq(declarations.id, declaration.id));
+
+            await updateCanvasNode({ context, declarationId: declaration.id });
+          }
+
+          taskCompleted = true;
+        } else {
+          throw new Error(
+            "Task execution completed but 'done' tool was not called. Task may be incomplete.",
+          );
+        }
+      } catch (error) {
+        retryCount++;
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        logger.error(
+          `Task "${taskName}" failed (attempt ${retryCount}/${maxRetries}): ${errorMessage}`,
+          {
+            extra: { error, taskId: task.id, retryCount },
+          },
+        );
+
+        if (retryCount < maxRetries) {
+          currentProgress.set(task.id, {
+            summary: task.data.summary,
+            progress: "retrying",
+            retryAttempt: retryCount,
+            maxRetries,
+          });
+
+          await new Promise((resolve) =>
+            setTimeout(resolve, coolDownPeriod * 2),
+          );
+
+          await db
+            .update(tasks)
+            .set({ status: "in_progress" })
+            .where(eq(tasks.id, task.id));
+
+          currentProgress.set(task.id, {
+            summary: task.data.summary,
+            progress: "in_progress",
+            retryAttempt: retryCount + 1,
+            maxRetries,
+          });
+        } else {
+          await db
+            .update(tasks)
+            .set({ status: "failed" })
+            .where(eq(tasks.id, task.id));
+
+          currentProgress.set(task.id, {
+            summary: task.data.summary,
+            progress: "failed",
+            retryAttempt: maxRetries,
+            maxRetries,
+          });
+        }
+      }
+    }
   }
+
+  context.set("currentTaskId", undefined);
+  context.set("activeTasks", undefined);
 
   const branchDir = getBranchDir(project.id, branch.id);
 
@@ -118,7 +238,6 @@ export async function coderAgent({
     .set({ status: "completed", commitHash })
     .where(eq(versions.id, branch.headVersion.id));
 
-  // Update context with the new version status
   const updatedVersion = {
     ...branch.headVersion,
     status: "completed" as const,
@@ -127,7 +246,6 @@ export async function coderAgent({
 
   context.set("branch", { ...branch, headVersion: updatedVersion });
 
-  // Notify the stream about the status change
   await stream(branch.headVersion.chatId, {
     type: "update_branch",
     data: {
@@ -138,27 +256,32 @@ export async function coderAgent({
 
   logger.info("Coder agent completed");
 
-  // End the stream
   await stream(branch.headVersion.chatId, { type: "end" });
 }
 
 async function executeTaskCoder({
   context,
   task,
-  loopChatId,
   progress,
+  allTaskContexts,
   coolDownPeriod = 1000,
 }: {
   context: WorkflowContext;
   task: TaskWithRelations;
-  loopChatId: string;
   progress: Map<
     string,
     {
       summary: string;
-      progress: "pending" | "in_progress" | "completed";
+      progress: "pending" | "in_progress" | "completed" | "failed" | "retrying";
+      retryAttempt?: number;
+      maxRetries?: number;
     }
   >;
+  allTaskContexts: Array<{
+    taskId: string;
+    taskName: string;
+    context: string;
+  }>;
   coolDownPeriod?: number;
 }) {
   const project = context.get("project");
@@ -187,25 +310,126 @@ async function executeTaskCoder({
     done: doneTool(context),
   };
 
+  const progressDisplay = Array.from(progress.entries())
+    .map(([_id, { summary, progress: status, retryAttempt, maxRetries }]) => {
+      const icon =
+        status === "completed"
+          ? "✓"
+          : status === "in_progress"
+            ? "◐"
+            : status === "retrying"
+              ? "⟳"
+              : status === "failed"
+                ? "✗"
+                : "○";
+
+      let statusText: string = status;
+      if (status === "retrying" && retryAttempt && maxRetries) {
+        statusText = `retrying (attempt ${retryAttempt}/${maxRetries})`;
+      } else if (status === "failed" && retryAttempt && maxRetries) {
+        statusText = `failed after ${retryAttempt} attempts`;
+      }
+
+      return `[${icon}] ${summary} (${statusText})`;
+    })
+    .join("\n");
+
+  const currentTaskEntry = Array.from(progress.entries()).find(
+    ([_id, { progress: status }]) =>
+      status === "in_progress" || status === "retrying",
+  );
+
+  const currentTaskInfo = currentTaskEntry
+    ? (() => {
+        const [, taskProgress] = currentTaskEntry;
+        return `\n\n**CURRENT STATE:** Working on task "${taskProgress.summary}"`;
+      })()
+    : "";
+
+  // Build all tasks context section with progress indicators
+  // Sort tasks by status: completed first, then in_progress/retrying, then pending/failed
+  const sortedTaskContexts = [...allTaskContexts].sort((a, b) => {
+    const statusA = progress.get(a.taskId)?.progress ?? "pending";
+    const statusB = progress.get(b.taskId)?.progress ?? "pending";
+
+    const statusOrder = {
+      completed: 0,
+      in_progress: 1,
+      retrying: 1,
+      pending: 2,
+      failed: 3,
+    };
+
+    return statusOrder[statusA] - statusOrder[statusB];
+  });
+
+  const allTasksContext = sortedTaskContexts
+    .map((taskCtx) => {
+      const taskProgress = progress.get(taskCtx.taskId);
+      const status = taskProgress?.progress ?? "pending";
+      const icon =
+        status === "completed"
+          ? "✓"
+          : status === "in_progress"
+            ? "◐"
+            : status === "retrying"
+              ? "⟳"
+              : status === "failed"
+                ? "✗"
+                : "○";
+
+      let statusText: string = status;
+      if (
+        status === "retrying" &&
+        taskProgress?.retryAttempt &&
+        taskProgress?.maxRetries
+      ) {
+        statusText = `retrying (attempt ${taskProgress.retryAttempt}/${taskProgress.maxRetries})`;
+      } else if (
+        status === "failed" &&
+        taskProgress?.retryAttempt &&
+        taskProgress?.maxRetries
+      ) {
+        statusText = `failed after ${taskProgress.retryAttempt} attempts`;
+      }
+
+      return `[${icon}] ${statusText.toUpperCase()}\n${taskCtx.context}`;
+    })
+    .join("\n\n");
+
   const versionContext = `${branch.headVersion.message}
   Description: ${branch.headVersion.description}
   Acceptance Criteria: ${branch.headVersion.acceptanceCriteria}
+
+  **ALL TASKS CONTEXT:**
+  ${allTasksContext}
+
+  ==========================================
+  **TASK EXECUTION STATE MACHINE (SUMMARY):**
   Progress:
-  ${Array.from(progress.entries())
-    .map(([id, { summary, progress }]) => `${id}: ${summary} - ${progress}`)
-    .join("\n")}`;
+  ${progressDisplay}${currentTaskInfo}
+
+  **STATE TRANSITIONS:**
+  - ○ pending → ◐ in_progress (when task starts)
+  - ◐ in_progress → ✓ completed (when task succeeds)
+  - ◐ in_progress → ⟳ retrying (when task fails, will retry)
+  - ⟳ retrying → ◐ in_progress (retry attempt in progress)
+  - ⟳ retrying → ✗ failed (if all retries exhausted)
+  - ✗ failed (task will be skipped, moving to next task)
+  ==========================================`;
 
   const system = await prompts.generalCoder(project, versionContext);
 
   const executeCoderLoop = async (): Promise<boolean> => {
     let shouldRecur = false;
-    const promptMessages = await getMessages(loopChatId);
+    const promptMessages = await getMessages(branch.headVersion.chatId);
 
     const result = streamText({
       model: registry.languageModel("google:gemini-2.5-pro"),
       system,
       tools,
       messages: promptMessages,
+      stopWhen: stepCountIs(10),
       onError: (error) => {
         logger.error("Error in coder agent", {
           extra: { error },
@@ -293,10 +517,11 @@ async function executeTaskCoder({
     return shouldRecur;
   };
 
-  // Main execution loop for the coder agent
   let shouldContinue = true;
   let iterationCount = 0;
-  while (shouldContinue) {
+  const maxIterations = 10;
+
+  while (shouldContinue && iterationCount < maxIterations) {
     iterationCount++;
     logger.info(
       `Starting coder agent iteration ${iterationCount} for task ${task.id}`,
@@ -315,6 +540,15 @@ async function executeTaskCoder({
       logger.info(`Recurring in ${coolDownPeriod}ms...`);
       await new Promise((resolve) => setTimeout(resolve, coolDownPeriod));
     }
+  }
+
+  if (iterationCount >= maxIterations) {
+    logger.error(
+      `Task ${task.id} exceeded maximum iterations (${maxIterations}) without calling done tool`,
+    );
+    throw new Error(
+      `Task exceeded maximum iterations (${maxIterations}) without calling done tool. Task may be stuck.`,
+    );
   }
 
   logger.info(`Coder agent completed for task ${task.id}`);
@@ -390,65 +624,34 @@ ${task.data.subTasks.map((subTask) => `- ${subTask}`).join("\n")}
       throw new Error("Declaration not found");
     }
 
-    const taskContext = `Your current task is to implement the following declaration:
----
+    const taskContext = `=== TASK: ${task.data.summary} ===
+Type: declaration
+
 ${formatTaskDeclarationToMarkdown(declaration)}
+
 ${sharedContext}
----
+
 Note:
 - You can implement any utility functions, components, or other declarations you need to implement the declaration.
 - Read the files you need and implement the required changes.
-- Leverage the notes and sub-tasks to implement the declaration.`;
+- Leverage the notes and sub-tasks to implement the declaration.
+===`;
 
     return { taskContext, declaration };
   }
 
-  // Handle generic tasks
-  const taskContext = `Your current task is to implement the following:
----
-Task: ${task.data.summary}
+  const taskContext = `=== TASK: ${task.data.summary} ===
+Type: generic
+
 Description: ${task.data.description}
+
 ${sharedContext}
----
+
 Note:
-- You can implement any utility functions, components, or other declarations you need to implement the declaration.
+- You can implement any utility functions, components, or other declarations you need to implement the task.
 - Read the files you need and implement the required changes.
-- Leverage the notes and sub-tasks to implement the declaration.`;
+- Leverage the notes and sub-tasks to implement the task.
+===`;
 
   return { taskContext };
-};
-
-const executeTaskWithContext = async (
-  task: TaskWithRelations,
-  taskContext: string,
-  context: WorkflowContext,
-  currentProgress: Map<
-    string,
-    { summary: string; progress: "pending" | "in_progress" | "completed" }
-  >,
-  coolDownPeriod: number,
-) => {
-  const user = context.get("user");
-  const loopChatId = task.chatId;
-
-  await insertMessages({
-    input: {
-      chatId: loopChatId,
-      userId: user.id,
-      messages: [
-        {
-          role: "user",
-          content: [{ type: "text", text: taskContext }],
-        },
-      ],
-    },
-  });
-
-  await executeTaskCoder({
-    context,
-    task,
-    loopChatId,
-    progress: currentProgress,
-    coolDownPeriod,
-  });
 };

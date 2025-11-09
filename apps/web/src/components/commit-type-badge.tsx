@@ -33,6 +33,8 @@ export function CommitTypeBadge({
         return "bg-pink-500/10 text-pink-500";
       case "revert":
         return "bg-orange-500/10 text-orange-500";
+      case "pending":
+        return "bg-yellow-500/10 text-yellow-500";
       default:
         return "bg-gray-500/10 text-gray-500";
     }
@@ -62,6 +64,8 @@ export function CommitTypeBadge({
         return "Build";
       case "revert":
         return "Revert";
+      case "pending":
+        return "Pending";
       default:
         return type.charAt(0).toUpperCase() + type.slice(1);
     }

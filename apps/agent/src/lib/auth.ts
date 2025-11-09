@@ -13,6 +13,7 @@ export const auth = betterAuth({
     database: {
       generateId: () => nanoid(),
     },
+    cookiePrefix: "weldr",
   },
 });
 

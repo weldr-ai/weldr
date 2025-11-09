@@ -7,9 +7,9 @@ import {
   branches,
   environmentVariables,
   integrationEnvironmentVariables,
+  integrationInstallations,
   integrations,
   integrationTemplates,
-  integrationVersions,
 } from "@weldr/db/schema";
 import {
   createBatchIntegrationsSchema,
@@ -66,10 +66,10 @@ export const integrationsRouter = createTRPCRouter({
 
         // Check if already queued or installed
         const existingInstallation =
-          await tx.query.integrationVersions.findFirst({
+          await tx.query.integrationInstallations.findFirst({
             where: and(
-              eq(integrationVersions.integrationId, input.integrationId),
-              eq(integrationVersions.versionId, input.versionId),
+              eq(integrationInstallations.integrationId, input.integrationId),
+              eq(integrationInstallations.versionId, input.versionId),
             ),
           });
 
@@ -81,7 +81,7 @@ export const integrationsRouter = createTRPCRouter({
         }
 
         // Create the installation queue entry
-        await tx.insert(integrationVersions).values({
+        await tx.insert(integrationInstallations).values({
           integrationId: input.integrationId,
           versionId: input.versionId,
           status: "queued",
@@ -92,7 +92,7 @@ export const integrationsRouter = createTRPCRouter({
         );
 
         await callAgentProxy(
-          "/api/integrations/install",
+          "/integrations/install",
           {
             projectId: version.projectId,
             branchId: version.branchId,
@@ -217,7 +217,7 @@ export const integrationsRouter = createTRPCRouter({
           });
 
           if (branch?.headVersionId) {
-            await tx.insert(integrationVersions).values({
+            await tx.insert(integrationInstallations).values({
               integrationId: integration.id,
               versionId: branch.headVersionId,
               status: "queued",
@@ -239,7 +239,7 @@ export const integrationsRouter = createTRPCRouter({
       // Trigger installation if branchId was provided
       if (input.branchId) {
         try {
-          await callAgentProxy("/api/integrations/install", {
+          await callAgentProxy("/integrations/install", {
             projectId: input.projectId,
             branchId: input.branchId,
             triggerWorkflow: false,
@@ -522,7 +522,7 @@ export const integrationsRouter = createTRPCRouter({
 
           // Queue integration for installation if branchId is provided
           if (headVersionId) {
-            await tx.insert(integrationVersions).values({
+            await tx.insert(integrationInstallations).values({
               integrationId: integration.id,
               versionId: headVersionId,
               status: "queued",
@@ -543,7 +543,7 @@ export const integrationsRouter = createTRPCRouter({
       if (input.branchId) {
         try {
           await callAgentProxy(
-            "/api/integrations/install",
+            "/integrations/install",
             {
               projectId: input.projectId,
               branchId: input.branchId,

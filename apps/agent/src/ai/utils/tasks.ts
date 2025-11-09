@@ -1,6 +1,5 @@
 import { db, eq } from "@weldr/db";
 import {
-  chats,
   type declarations,
   dependencies,
   taskDependencies,
@@ -51,24 +50,11 @@ export async function createTasks({
 
     // First pass: Create all tasks sequentially to avoid foreign key constraint issues
     for (const task of taskList) {
-      const [chat] = await tx
-        .insert(chats)
-        .values({
-          userId: branch.headVersion.userId,
-          projectId: project.id,
-        })
-        .returning();
-
-      if (!chat) {
-        throw new Error("Failed to insert chat");
-      }
-
       const [insertedTask] = await tx
         .insert(tasks)
         .values({
           data: task,
           versionId: branch.headVersion.id,
-          chatId: chat.id,
           status: "pending",
         })
         .returning();
@@ -206,14 +192,16 @@ export async function getTaskExecutionPlan({
 }): Promise<TaskWithRelations[]> {
   const tasks = await getTasksWithDependencies(versionId);
 
-  // Filter only pending tasks
-  const pendingTasks = tasks.filter((task) => task.status === "pending");
+  // Filter only pending and in_progress tasks (in case of restarts)
+  const activeTasks = tasks.filter(
+    (task) => task.status === "pending" || task.status === "in_progress",
+  );
 
-  if (pendingTasks.length === 0) {
+  if (activeTasks.length === 0) {
     return [];
   }
 
-  const orderedTasks = orderTasks(pendingTasks);
+  const orderedTasks = orderTasks(activeTasks);
   return orderedTasks;
 }
 

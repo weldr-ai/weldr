@@ -99,7 +99,6 @@ export function ProjectSettings({
               className="mt-0 h-[calc(100vh-134px)] overflow-hidden"
             >
               <IntegrationsSection
-                projectId={project.id}
                 integrationTemplates={integrationTemplates}
                 integrations={project.integrations}
                 environmentVariables={environmentVariables}
@@ -107,7 +106,7 @@ export function ProjectSettings({
             </TabsContent>
 
             <TabsContent value="env" className="mt-0">
-              <EnvSection env={environmentVariables} projectId={project.id} />
+              <EnvSection environmentVariables={environmentVariables} />
             </TabsContent>
           </div>
         </Tabs>

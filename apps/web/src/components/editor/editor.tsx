@@ -45,12 +45,14 @@ export function Editor({
   project,
   branch,
   integrationTemplates,
+  environmentVariables,
 }: {
   initialNodes: CanvasNode[];
   initialEdges: Edge[];
   project: RouterOutputs["projects"]["byId"];
   branch: RouterOutputs["branches"]["byIdOrMain"];
   integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
+  environmentVariables: RouterOutputs["environmentVariables"]["list"];
 }) {
   const { zoomIn, zoomOut, fitView } = useReactFlow();
   const viewPort = useViewport();
@@ -356,6 +358,7 @@ export function Editor({
           project={project}
           branch={branch}
           integrationTemplates={integrationTemplates}
+          environmentVariables={environmentVariables}
         />
       </Panel>
 

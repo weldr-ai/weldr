@@ -22,8 +22,10 @@ export interface ActiveProjectsState {
 export function loadActiveProjects(): ActiveProjectsState {
   try {
     if (existsSync(ACTIVE_PROJECTS_FILE)) {
-      const content = readFileSync(ACTIVE_PROJECTS_FILE, "utf-8");
-      return JSON.parse(content) as ActiveProjectsState;
+      const content = readFileSync(ACTIVE_PROJECTS_FILE, "utf-8").trim();
+      if (content) {
+        return JSON.parse(content) as ActiveProjectsState;
+      }
     }
   } catch (error) {
     console.warn("Failed to load active projects metadata", error);

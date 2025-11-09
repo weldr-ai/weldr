@@ -2,7 +2,7 @@ import { TRPCError } from "@trpc/server";
 
 export async function callAgentProxy<T = unknown>(
   endpoint: string,
-  body: Record<string, unknown>,
+  body: { projectId: string } & Record<string, unknown>,
   requestHeaders?: Headers,
 ): Promise<T> {
   // Get base URL from environment or default to localhost
@@ -12,10 +12,26 @@ export async function callAgentProxy<T = unknown>(
   const proxyHeaders = new Headers();
   proxyHeaders.set("content-type", "application/json");
 
-  // Copy all headers from the original request
+  // Copy headers from the original request, excluding those that shouldn't be copied
+  const headersToExclude = new Set([
+    "content-length", // Will be set automatically by fetch
+    "host", // Should be set by the proxy
+    "connection",
+    "transfer-encoding",
+  ]);
+
   requestHeaders?.forEach((value, key) => {
-    proxyHeaders.set(key, value);
+    const lowerKey = key.toLowerCase();
+    if (!headersToExclude.has(lowerKey)) {
+      proxyHeaders.set(key, value);
+    }
   });
+
+  // Ensure cookies are included if present
+  const cookie = requestHeaders?.get("cookie");
+  if (cookie) {
+    proxyHeaders.set("cookie", cookie);
+  }
 
   const response = await fetch(proxyUrl, {
     method: "POST",
@@ -28,6 +44,7 @@ export async function callAgentProxy<T = unknown>(
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
+    console.error("Agent proxy request failed:", errorData);
     throw new TRPCError({
       code: "INTERNAL_SERVER_ERROR",
       message: errorData.error || "Agent proxy request failed",

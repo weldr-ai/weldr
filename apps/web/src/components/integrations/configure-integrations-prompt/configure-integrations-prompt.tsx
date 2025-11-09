@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import type { AssistantContent, ToolContent } from "ai";
+import type { AssistantContent } from "ai";
 import fastDeepEqual from "fast-deep-equal";
 import { CheckIcon, LoaderIcon, PenIcon } from "lucide-react";
 import { useParams } from "next/navigation";
@@ -32,6 +32,7 @@ const PureConfigureIntegrationsPrompt = ({
   setMessages,
   integrationTemplates,
   environmentVariables,
+  project,
   setStatus,
   branchId,
 }: {
@@ -40,6 +41,7 @@ const PureConfigureIntegrationsPrompt = ({
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
   integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
   environmentVariables: RouterOutputs["environmentVariables"]["list"];
+  project: RouterOutputs["projects"]["byId"];
   setStatus: Dispatch<SetStateAction<TStatus>>;
   branchId: string;
 }) => {
@@ -248,38 +250,12 @@ const PureConfigureIntegrationsPrompt = ({
 
   const addMessageMutation = useMutation(
     trpc.chats.addMessage.mutationOptions({
-      onMutate: async (data) => {
-        setStatus(null);
-
-        let previousMessages: ChatMessage[] = [];
-
-        const optimisticMessage = {
-          id: data.message.id || nanoid(),
-          role: "tool" as const,
-          content: data.message.content as ToolContent,
-          createdAt: data.message.createdAt || new Date(),
-          chatId,
-        };
-
-        setMessages((prev) => {
-          previousMessages = [...prev];
-          return [...prev, optimisticMessage];
-        });
-
-        return { previousMessages, optimisticMessage };
-      },
       onSuccess: (data) => {
-        setMessages((prev) => {
-          const withoutOptimistic = prev.filter((msg) => msg.id !== data.id);
-          return [...withoutOptimistic, data];
-        });
+        setStatus(null);
+        setMessages((prev) => [...prev, data]);
         setStatus("thinking");
       },
-      onError: (error, _variables, context) => {
-        if (context?.previousMessages) {
-          setMessages(context.previousMessages);
-        }
-
+      onError: (error) => {
         toast({
           title: "Error",
           description: error.message,
@@ -331,7 +307,7 @@ const PureConfigureIntegrationsPrompt = ({
 
     const messageContentWithoutToolCall = messageContent.filter(
       (part) =>
-        part.type === "tool-call" &&
+        part.type !== "tool-call" ||
         part.toolCallId !== integrationToolCall.toolCallId,
     );
 
@@ -429,14 +405,14 @@ const PureConfigureIntegrationsPrompt = ({
   }, [addMessageMutation, chatId, integrationToolCall, requiredCategories]);
 
   return (
-    <div className="flex min-h-[300px] flex-col rounded-md border">
+    <div className="rounded-md border">
       <div className="flex flex-col items-center border-b p-1.5">
         <h3 className="font-medium">Setup Integrations</h3>
         <p className="text-muted-foreground text-xs">
           Select and configure integrations for your project
         </p>
       </div>
-      <div className="flex flex-1 flex-col justify-between gap-2 p-1.5">
+      <div className="flex flex-col gap-2 p-1.5">
         {Object.entries(groupedTemplates)
           .sort(([, a], [, b]) => {
             const aNeedsConfig = needsUserConfig(a.category.key);
@@ -473,6 +449,7 @@ const PureConfigureIntegrationsPrompt = ({
                             categoryKey
                           ] as RouterOutputs["integrationTemplates"]["list"][0]
                         }
+                        project={project}
                         environmentVariables={environmentVariables}
                         isConfigured={isConfigured(categoryKey)}
                         disabled={!needsUserConfig(categoryKey)}
@@ -531,11 +508,12 @@ const PureConfigureIntegrationsPrompt = ({
               </div>
             </div>
           ))}
-        <div className="flex justify-end gap-1">
+        <div className="flex justify-end gap-1 border-t pt-1.5">
           <Button
             type="button"
             variant="outline"
             size="sm"
+            disabled={createBatchIntegrationsMutation.isPending}
             onClick={handleIntegrationCancel}
           >
             Cancel
@@ -552,6 +530,7 @@ const PureConfigureIntegrationsPrompt = ({
               Object.values(selectedIntegrations).every(
                 (integration) => !integration,
               ) ||
+              createBatchIntegrationsMutation.isPending ||
               categoryChange.length !== 0
             }
           >
@@ -570,6 +549,7 @@ export const ConfigureIntegrationsPrompt = memo(
   PureConfigureIntegrationsPrompt,
   (prevProps, nextProps) => {
     if (
+      !fastDeepEqual(prevProps.message, nextProps.message) ||
       !fastDeepEqual(
         prevProps.environmentVariables,
         nextProps.environmentVariables,

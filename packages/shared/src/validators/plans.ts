@@ -260,29 +260,6 @@ export const taskSchema = z.union([
 ]);
 
 export const planSchema = z.object({
-  commitMessage: z.string().describe(`
-    Commit message for the plan.
-    Should be a single sentence that captures the essence of the plan.
-    Follows the conventional commit message format.
-    Examples:
-    - feat: add user profile page
-    - fix: update user profile page
-    - chore: update dependencies
-    - refactor: update user profile page
-    - test: add user profile page tests
-  `),
-  description: z.string().describe(`
-    Comprehensive description of the plan, including:
-    - Business requirements and objectives
-    - User stories and use cases
-    - Overall scope and boundaries
-    - Integration requirements
-
-    Should start with present tense verbs (e.g., "Creates", "Builds", "Implements") rather than "This plan".
-    Example: "Creates a simple, single-page web application where users can manage a to-do list..."
-
-    This should provide the big picture context for all subtasks.
-  `),
   acceptanceCriteria: z
     .string()
     .array()

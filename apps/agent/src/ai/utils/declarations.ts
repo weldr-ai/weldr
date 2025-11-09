@@ -336,10 +336,19 @@ export async function extractAndSaveDeclarations({
 
         // Process each extracted declaration and create or update database records
         for (const data of extracted) {
-          const declarationId = nanoid();
-          newDeclarationUriToId.set(data.uri, declarationId);
+          // Check if this declaration already exists in the database (across all versions)
+          const [existingDeclarationByUri] = await tx
+            .select({ id: declarations.id })
+            .from(declarations)
+            .where(
+              and(
+                eq(declarations.projectId, project.id),
+                eq(declarations.uri, data.uri),
+              ),
+            )
+            .limit(1);
 
-          // Check if this declaration already exists in the database
+          // Check if this declaration already exists in the current version
           const doesDeclarationExist = existingDeclarations.find(
             (d) => data.uri === d.uri,
           );
@@ -385,7 +394,14 @@ export async function extractAndSaveDeclarations({
             }
           });
 
-          if (doesDeclarationExist) {
+          let declarationId: string;
+
+          if (doesDeclarationExist || existingDeclarationByUri) {
+            // Use existing declaration ID
+            declarationId =
+              // biome-ignore lint/style/noNonNullAssertion: we know that at least one of the two will be defined
+              doesDeclarationExist?.id || existingDeclarationByUri!.id;
+
             // Update existing declaration with new metadata and set to enriching status
             await tx
               .update(declarations)
@@ -395,9 +411,15 @@ export async function extractAndSaveDeclarations({
                 }),
                 progress: "enriching",
               })
-              .where(eq(declarations.id, doesDeclarationExist.id))
+              .where(eq(declarations.id, declarationId))
               .returning();
+
+            // Update the map to use the existing ID
+            newDeclarationUriToId.set(data.uri, declarationId);
           } else if (isHighLevelDeclaration) {
+            // Use existing high-level declaration ID
+            declarationId = isHighLevelDeclaration.id;
+
             await tx
               .update(declarations)
               .set({
@@ -406,15 +428,17 @@ export async function extractAndSaveDeclarations({
                   codeMetadata: data,
                 }),
               })
-              .where(eq(declarations.id, isHighLevelDeclaration.id));
+              .where(eq(declarations.id, declarationId));
 
-            newDeclarationUriToId.set(data.uri, isHighLevelDeclaration.id);
+            newDeclarationUriToId.set(data.uri, declarationId);
 
             logger.info(
-              `Linked task declaration ${isHighLevelDeclaration.id} to code declaration ${data.uri}`,
+              `Linked task declaration ${declarationId} to code declaration ${data.uri}`,
             );
           } else {
             // Create new declaration record with initial metadata
+            declarationId = nanoid();
+
             await tx.insert(declarations).values({
               id: declarationId,
               uri: data.uri,
@@ -427,6 +451,9 @@ export async function extractAndSaveDeclarations({
               projectId: project.id,
               userId: project.userId,
             });
+
+            // Update the map to use the new ID
+            newDeclarationUriToId.set(data.uri, declarationId);
           }
 
           // Queue background job to enrich this declaration with AI analysis
@@ -438,11 +465,18 @@ export async function extractAndSaveDeclarations({
             projectId: project.id,
           });
 
-          // Link the declaration to the current version
-          await tx.insert(versionDeclarations).values({
-            versionId: branch.headVersion.id,
-            declarationId,
-          });
+          // Check if the version link already exists before inserting
+          const existingVersionLink = activeVersionDeclarations.find(
+            (vd) => vd.declarationId === declarationId,
+          );
+
+          if (!existingVersionLink) {
+            // Link the declaration to the current version
+            await tx.insert(versionDeclarations).values({
+              versionId: branch.headVersion.id,
+              declarationId,
+            });
+          }
         }
 
         // Second pass: establish dependency relationships between declarations

@@ -38,6 +38,7 @@ export const postgresqlIntegrationTemplateSchema =
         name: z.literal("DATABASE_URL"),
         isRequired: z.literal(true),
         source: z.literal("user"),
+        target: z.tuple([z.literal("server")]),
       }),
     ]),
     options: z.object({
@@ -57,6 +58,7 @@ export const betterAuthIntegrationTemplateSchema =
         name: z.literal("BETTER_AUTH_SECRET"),
         isRequired: z.literal(true),
         source: z.literal("system"),
+        target: z.tuple([z.literal("server")]),
       }),
     ),
     allowMultiple: z.literal(false),

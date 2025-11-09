@@ -6,7 +6,7 @@ import {
   branches,
   chatMessages,
   chats,
-  integrationVersions,
+  integrationInstallations,
   projects,
   tasks,
   versionDeclarations,
@@ -308,7 +308,7 @@ export const versionRouter = {
         with: {
           branch: true,
           declarations: true,
-          integrationVersions: true,
+          integrationInstallations: true,
           tasks: true,
         },
       });
@@ -421,11 +421,11 @@ export const versionRouter = {
           );
         }
 
-        if (version.integrationVersions.length > 0) {
-          await tx.insert(integrationVersions).values(
-            version.integrationVersions.map((integrationVersion) => ({
+        if (version.integrationInstallations.length > 0) {
+          await tx.insert(integrationInstallations).values(
+            version.integrationInstallations.map((installation) => ({
               versionId: revertedVersion.id,
-              integrationId: integrationVersion.integrationId,
+              integrationId: installation.integrationId,
             })),
           );
         }
@@ -436,7 +436,6 @@ export const versionRouter = {
               versionId: revertedVersion.id,
               status: task.status,
               data: task.data,
-              chatId: task.chatId,
             })),
           );
         }
@@ -453,7 +452,7 @@ export const versionRouter = {
 
       try {
         const { commitHash } = await callAgentProxy<{ commitHash: string }>(
-          "/api/versions/revert",
+          "/revert",
           {
             projectId: input.projectId,
             versionId: input.versionId,

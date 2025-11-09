@@ -12,6 +12,7 @@ interface MessagesProps {
   branchId: string;
   integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
   environmentVariables: RouterOutputs["environmentVariables"]["list"];
+  project: RouterOutputs["projects"]["byId"];
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
   setStatus: Dispatch<SetStateAction<TStatus>>;
 }
@@ -21,6 +22,7 @@ function PureMessages({
   branchId,
   integrationTemplates,
   environmentVariables,
+  project,
   setMessages,
   setStatus,
 }: MessagesProps) {
@@ -33,6 +35,7 @@ function PureMessages({
           branchId={branchId}
           integrationTemplates={integrationTemplates}
           environmentVariables={environmentVariables}
+          project={project}
           setMessages={setMessages}
           setStatus={setStatus}
         />
@@ -44,5 +47,7 @@ function PureMessages({
 export const Messages = memo(PureMessages, (prevProps, nextProps) => {
   if (prevProps.messages.length !== nextProps.messages.length) return false;
   if (!equal(prevProps.messages, nextProps.messages)) return false;
+  if (!equal(prevProps.environmentVariables, nextProps.environmentVariables))
+    return false;
   return true;
 });

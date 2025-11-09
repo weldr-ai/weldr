@@ -26,6 +26,7 @@ const PureMessageItem = ({
   setMessages,
   setStatus,
   environmentVariables,
+  project,
 }: {
   message: ChatMessage;
   branchId: string;
@@ -33,6 +34,7 @@ const PureMessageItem = ({
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
   setStatus: Dispatch<SetStateAction<TStatus>>;
   environmentVariables: RouterOutputs["environmentVariables"]["list"];
+  project: RouterOutputs["projects"]["byId"];
 }) => {
   return (
     <div
@@ -100,6 +102,7 @@ const PureMessageItem = ({
                     chatId={message.chatId}
                     setMessages={setMessages}
                     environmentVariables={environmentVariables}
+                    project={project}
                     setStatus={setStatus}
                   />
                 );
@@ -122,7 +125,13 @@ const PureMessageItem = ({
 };
 
 export const MessageItem = memo(PureMessageItem, (prevProps, nextProps) => {
-  if (!fastDeepEqual(prevProps.message, nextProps.message)) {
+  if (
+    !fastDeepEqual(prevProps.message, nextProps.message) ||
+    !fastDeepEqual(
+      prevProps.environmentVariables,
+      nextProps.environmentVariables,
+    )
+  ) {
     return false;
   }
   return true;

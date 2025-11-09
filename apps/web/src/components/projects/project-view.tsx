@@ -52,7 +52,7 @@ export function ProjectView({
     ),
   );
 
-  const { data: env } = useQuery(
+  const { data: environmentVariables } = useQuery(
     trpc.environmentVariables.list.queryOptions(
       {
         projectId: project.id,
@@ -73,7 +73,7 @@ export function ProjectView({
         <ProjectSettings
           project={project}
           integrationTemplates={integrationTemplates}
-          environmentVariables={env}
+          environmentVariables={environmentVariables}
         />
       </div>
       <Editor
@@ -82,6 +82,7 @@ export function ProjectView({
         initialNodes={initialNodes}
         initialEdges={initialEdges}
         integrationTemplates={integrationTemplates}
+        environmentVariables={environmentVariables}
       />
     </div>
   );

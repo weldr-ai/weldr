@@ -1,7 +1,7 @@
 import type { ToolContent, ToolResultPart } from "ai";
 
 import { and, db, eq } from "@weldr/db";
-import { chatMessages } from "@weldr/db/schema";
+import { chatMessages, integrationInstallations } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
 import type {
   IntegrationCategoryKey,
@@ -15,6 +15,7 @@ import { stream } from "@/lib/stream-utils";
 import type { WorkflowContext } from "@/workflow/context";
 import {
   getQueuedIntegrations,
+  unblockIntegrations,
   updateIntegrationInstallationStatus,
 } from "./queue-manager";
 
@@ -233,7 +234,28 @@ export async function installQueuedIntegrations(
       break;
     }
 
+    await unblockIntegrations(context);
+
     installationRound++;
+  }
+
+  const blockedIntegrations = await db.query.integrationInstallations.findMany({
+    where: and(
+      eq(integrationInstallations.versionId, versionId),
+      eq(integrationInstallations.status, "blocked"),
+    ),
+    with: {
+      integration: true,
+    },
+  });
+
+  if (blockedIntegrations.length > 0) {
+    const blockedKeys = blockedIntegrations
+      .map((i) => i.integration.key)
+      .join(", ");
+    logger.warn(
+      `Installation completed but ${blockedIntegrations.length} integrations remain blocked: ${blockedKeys}`,
+    );
   }
 
   logger.info(

@@ -6,9 +6,14 @@ import { getActiveProjectIds, isLocalMode } from "@weldr/shared/state";
 import { getInstalledCategories } from "@/integrations/utils/get-installed-categories";
 import { WorkflowContext } from "./context";
 import { createWorkflow } from "./engine";
-import { codeStep } from "./steps/code";
-import { finalizeStep } from "./steps/finalize";
-import { planStep } from "./steps/plan";
+import {
+  codingStep,
+  finalizingStep,
+  generateBranchNameStep,
+  generateProjectInfoStep,
+  generateVersionDetailsStep,
+  planningStep,
+} from "./steps";
 
 export const workflow = createWorkflow({
   retryConfig: {
@@ -16,9 +21,48 @@ export const workflow = createWorkflow({
     delay: 1000,
   },
 })
-  .onStatus(["pending", "planning"], planStep)
-  .onStatus("coding", codeStep)
-  .onStatus("finalize", finalizeStep);
+  .step(planningStep, {
+    condition: (context) => {
+      const status = context.get("branch").headVersion.status;
+      return status === "planning";
+    },
+  })
+  .step(generateProjectInfoStep, {
+    condition: (context) => {
+      const project = context.get("project");
+      const status = context.get("branch").headVersion.status;
+      return status === "coding" && (!project.title || !project.description);
+    },
+  })
+  .step(generateBranchNameStep, {
+    condition: (context) => {
+      const branch = context.get("branch");
+      const status = branch.headVersion.status;
+      return status === "coding" && !branch.name;
+    },
+  })
+  .step(generateVersionDetailsStep, {
+    condition: (context) => {
+      const branch = context.get("branch");
+      const status = branch.headVersion.status;
+      return (
+        status === "coding" &&
+        (!branch.headVersion.message || !branch.headVersion.description)
+      );
+    },
+  })
+  .step(codingStep, {
+    condition: (context) => {
+      const status = context.get("branch").headVersion.status;
+      return status === "coding";
+    },
+  })
+  .step(finalizingStep, {
+    condition: (context) => {
+      const status = context.get("branch").headVersion.status;
+      return status === "finalizing";
+    },
+  });
 
 export async function recoverWorkflow() {
   Logger.info("Recovering workflow");
@@ -104,7 +148,12 @@ export async function recoverWorkflow() {
     const versionsList = await db.query.versions.findMany({
       where: and(
         eq(versions.projectId, project.id),
-        eq(versions.status, "coding"),
+        inArray(versions.status, [
+          "coding",
+          "finalizing",
+          "completed",
+          "failed",
+        ]),
       ),
       with: {
         branch: true,

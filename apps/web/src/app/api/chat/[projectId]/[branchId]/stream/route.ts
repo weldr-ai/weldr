@@ -3,6 +3,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@weldr/auth";
 import { and, db, eq } from "@weldr/db";
 import { branches, projects } from "@weldr/db/schema";
+import { isLocalMode } from "@weldr/shared/state";
 
 export async function GET(
   request: NextRequest,
@@ -38,7 +39,7 @@ export async function GET(
       return NextResponse.json({ error: "Branch not found" }, { status: 404 });
     }
 
-    if (process.env.NODE_ENV === "production") {
+    if (!isLocalMode()) {
       const appName = `project-development-${projectId}`;
 
       return new NextResponse(null, {

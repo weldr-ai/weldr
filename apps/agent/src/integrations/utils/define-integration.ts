@@ -1,5 +1,5 @@
 import { Logger } from "@weldr/shared/logger";
-import { getBranchDir } from "@weldr/shared/state";
+import { getBranchDir, isLocalMode } from "@weldr/shared/state";
 import type { Integration, IntegrationKey } from "@weldr/shared/types";
 
 import type { WorkflowContext } from "@/workflow/context";
@@ -7,6 +7,7 @@ import type { ExtractOptionsForKey, IntegrationDefinition } from "../types";
 import { combineResults } from "./combine-results";
 import { seedDeclarationTemplates } from "./declaration-templates-utils";
 import { installPackages, updatePackageJsonScripts } from "./packages";
+import { writeEnvironmentVariables } from "./write-env";
 
 export function defineIntegration<K extends IntegrationKey>(
   props: IntegrationDefinition<K>,
@@ -31,6 +32,14 @@ export function defineIntegration<K extends IntegrationKey>(
 
         const packages = (await props.packages?.(context, options)) ?? [];
         const scripts = (await props.scripts?.(context, options)) ?? [];
+
+        // In local mode, write environment variables to .env files
+        if (isLocalMode()) {
+          await writeEnvironmentVariables({
+            context,
+            integration,
+          });
+        }
 
         const results = await Promise.all([
           updatePackageJsonScripts(scripts, branchDir),

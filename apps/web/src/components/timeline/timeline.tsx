@@ -1,5 +1,4 @@
 import { useControllableState } from "@radix-ui/react-use-controllable-state";
-import { useQueryClient } from "@tanstack/react-query";
 import {
   ExpandIcon,
   ExternalLinkIcon,
@@ -8,7 +7,6 @@ import {
   WorkflowIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
 import { createContext, useContext, useRef, useState } from "react";
 
 import type { RouterOutputs } from "@weldr/api";
@@ -26,7 +24,7 @@ import {
 } from "@weldr/ui/components/tooltip";
 import { cn } from "@weldr/ui/lib/utils";
 
-import { useTRPC } from "@/lib/trpc/react";
+import { getPreviewUrl } from "@/lib/preview-url";
 import { parseConventionalCommit } from "@/lib/utils";
 import { CommitTypeBadge } from "../commit-type-badge";
 import { CreateBranchDialog } from "./create-branch-dialog";
@@ -38,6 +36,7 @@ import { RevertVersionDialog } from "./revert-version-dialog";
 type TimelineContextValue = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  branch: RouterOutputs["branches"]["byIdOrMain"];
 };
 
 const TimelineContext = createContext<TimelineContextValue | null>(null);
@@ -53,23 +52,7 @@ const useTimelineContext = () => {
 };
 
 export function TimelineTrigger() {
-  const { open, onOpenChange } = useTimelineContext();
-
-  const { projectId, branchId } = useParams<{
-    projectId: string;
-    branchId?: string;
-  }>();
-
-  const queryClient = useQueryClient();
-  const trpc = useTRPC();
-
-  const branch = queryClient.getQueryData(
-    trpc.branches.byIdOrMain.queryKey({ projectId, id: branchId }),
-  );
-
-  if (!branch) {
-    return null;
-  }
+  const { open, onOpenChange, branch } = useTimelineContext();
 
   return (
     <TooltipProvider>
@@ -103,10 +86,12 @@ export function TimelineTrigger() {
 export function Timeline({
   open,
   onOpenChange,
+  branch,
   children,
 }: {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  branch: RouterOutputs["branches"]["byIdOrMain"];
   children: React.ReactNode;
 }) {
   const [isOpen, setIsOpen] = useControllableState({
@@ -116,30 +101,20 @@ export function Timeline({
   });
 
   return (
-    <TimelineContext.Provider value={{ open: isOpen, onOpenChange: setIsOpen }}>
+    <TimelineContext.Provider
+      value={{ open: isOpen, onOpenChange: setIsOpen, branch }}
+    >
       {children}
     </TimelineContext.Provider>
   );
 }
 
 export function TimelineContent({ className }: { className?: string }) {
-  const { projectId, branchId } = useParams<{
-    projectId: string;
-    branchId?: string;
-  }>();
-
-  const queryClient = useQueryClient();
-  const trpc = useTRPC();
-
-  const { open } = useTimelineContext();
+  const { open, branch } = useTimelineContext();
   const [highlightedVersionId, setHighlightedVersionId] = useState<
     string | null
   >(null);
   const versionRefs = useRef<Record<string, HTMLDivElement | null>>({});
-
-  const branch = queryClient.getQueryData(
-    trpc.branches.byIdOrMain.queryKey({ projectId, id: branchId }),
-  );
 
   const scrollToVersion = (versionId: string) => {
     const element = versionRefs.current[versionId];
@@ -154,7 +129,7 @@ export function TimelineContent({ className }: { className?: string }) {
     }
   };
 
-  if (!branch || !open) {
+  if (!open) {
     return null;
   }
 
@@ -162,6 +137,7 @@ export function TimelineContent({ className }: { className?: string }) {
   const versions = branch.versions || [];
   const ancestryChain = branch.ancestryChain || [];
   const siblingVariants = branch.siblingVariants || [];
+  const lastVersion = versions[versions.length - 1];
 
   if (versions.length === 0) {
     return (
@@ -189,32 +165,36 @@ export function TimelineContent({ className }: { className?: string }) {
 
       <div className="scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground scrollbar-track-transparent max-h-[150px] overflow-y-auto">
         <div className="flex flex-col p-3">
-          <div className="relative">
-            <div className="grid cursor-default grid-cols-[1fr_1.5rem] items-center gap-2 rounded-md transition-colors duration-300">
-              <div className="grid grid-cols-[auto_2.5rem_3rem_1fr] items-center gap-2 rounded-md px-2 py-1 hover:bg-accent">
-                <div className="relative flex h-full items-center justify-center">
-                  <div className="relative z-10 size-2 shrink-0 rounded-full bg-muted-foreground" />
-                  <div
-                    className="-translate-x-1/2 absolute top-[calc(50%+4px)] bottom-0 left-1/2 z-10 w-px border-dashed bg-border"
-                    style={{ height: "calc(100% + 0.5rem)" }}
-                  />
+          {lastVersion?.status === "completed" && (
+            <div className="relative">
+              <div className="grid cursor-default grid-cols-[1fr_1.5rem] items-center gap-2 rounded-md transition-colors duration-300">
+                <div className="grid grid-cols-[auto_2.5rem_3rem_1fr] items-center gap-2 rounded-md px-2 py-1 hover:bg-accent">
+                  <div className="relative flex h-full items-center justify-center">
+                    <div className="relative z-10 size-2 shrink-0 rounded-full bg-muted-foreground" />
+                    <div
+                      className="-translate-x-1/2 absolute top-[calc(50%+4px)] bottom-0 left-1/2 z-10 w-px border-dashed bg-border"
+                      style={{ height: "calc(100% + 0.5rem)" }}
+                    />
+                  </div>
+
+                  <span className="text-left text-muted-foreground text-xs">
+                    #
+                    {versions[0]?.sequenceNumber
+                      ? versions[0].sequenceNumber + 1
+                      : 1}
+                  </span>
+
+                  <div className="flex items-center">
+                    <CommitTypeBadge type="new" />
+                  </div>
+
+                  <span className="text-left text-muted-foreground text-xs">
+                    New version
+                  </span>
                 </div>
-
-                <span className="text-left text-muted-foreground text-xs">
-                  #
-                  {versions[0]?.sequenceNumber
-                    ? versions[0].sequenceNumber + 1
-                    : 1}
-                </span>
-
-                <div className="flex items-center">
-                  <CommitTypeBadge type="new" />
-                </div>
-
-                <span className="text-left text-xs">New version</span>
               </div>
             </div>
-          </div>
+          )}
           {versions.map((version, index) => {
             const forkedBranches = versionToBranchesMap[version.id] || [];
             const parsed = parseConventionalCommit(version.message || "");
@@ -259,13 +239,23 @@ export function TimelineContent({ className }: { className?: string }) {
                       </span>
 
                       <div className="flex items-center">
-                        {parsed.type && <CommitTypeBadge type={parsed.type} />}
+                        {parsed.type &&
+                        version.status !== "completed" &&
+                        version.status !== "failed" ? (
+                          <CommitTypeBadge type={parsed.type} />
+                        ) : (
+                          <CommitTypeBadge type="pending" />
+                        )}
                       </div>
 
                       <div className="flex min-w-0 flex-1 items-center gap-1.5">
-                        {version.message && (
+                        {version.message ? (
                           <span className="block truncate text-left text-xs">
                             {parsed.message || version.message}
+                          </span>
+                        ) : (
+                          <span className="block truncate text-left text-xs">
+                            Untitled Version
                           </span>
                         )}
                         {version.kind === "integration" &&
@@ -332,7 +322,11 @@ function TimelineItem({
 
   const isCompleted = isPublished || isFailed;
 
-  const previewUrl = `https://${version.id}.preview.weldr.app`;
+  const previewUrl = getPreviewUrl(
+    version.id,
+    version.projectId,
+    version.branchId,
+  );
 
   const handleCreateBranch = (type: "variant" | "stream") => {
     setBranchType(type);
@@ -365,24 +359,28 @@ function TimelineItem({
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1">
           <span className="font-medium text-muted-foreground text-xs">{`#${version.sequenceNumber}`}</span>
-          {parsed.type && <CommitTypeBadge type={parsed.type} />}
+          {parsed.type &&
+          version.status !== "completed" &&
+          version.status !== "failed" ? (
+            <CommitTypeBadge type={parsed.type} />
+          ) : (
+            <CommitTypeBadge type="pending" />
+          )}
           {getKindBadge()}
         </div>
         <div className="flex items-center gap-0.5">
-          {!isPublished && (
-            <Link
-              href={`/projects/${version.projectId}?versionId=${version.id}`}
-              className={cn(
-                buttonVariants({
-                  variant: "ghost",
-                  size: "icon",
-                }),
-                "size-5 rounded-sm text-muted-foreground hover:text-foreground",
-              )}
-            >
-              <ExpandIcon className="size-3" />
-            </Link>
-          )}
+          <Link
+            href={`/projects/${version.projectId}?versionId=${version.id}`}
+            className={cn(
+              buttonVariants({
+                variant: "ghost",
+                size: "icon",
+              }),
+              "size-5 rounded-sm text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <ExpandIcon className="size-3" />
+          </Link>
           {(isPublished || version.status === "failed") && (
             <span
               className={cn("rounded-md px-1.5 py-0.5 text-[10px]", {
@@ -390,7 +388,7 @@ function TimelineItem({
                   version.status === "planning",
                 "bg-teal-500 text-teal-50": version.status === "coding",
                 "bg-primary text-primary-foreground":
-                  version.status === "deploying",
+                  version.status === "finalizing",
                 "bg-success text-success-foreground":
                   version.status === "completed",
                 "bg-destructive text-destructive-foreground":

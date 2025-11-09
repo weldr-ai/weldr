@@ -1,3 +1,4 @@
+import equal from "fast-deep-equal";
 import { memo, useEffect, useState } from "react";
 
 import type { RouterOutputs } from "@weldr/api";
@@ -21,10 +22,11 @@ interface ChatProps {
   integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
   project: RouterOutputs["projects"]["byId"];
   branch: RouterOutputs["branches"]["byIdOrMain"];
+  environmentVariables: RouterOutputs["environmentVariables"]["list"];
 }
 
 export const Chat = memo<ChatProps>(
-  ({ integrationTemplates, project, branch }) => {
+  ({ integrationTemplates, project, branch, environmentVariables }) => {
     const { data: session } = authClient.useSession();
 
     const {
@@ -77,7 +79,7 @@ export const Chat = memo<ChatProps>(
       await handleMessageSubmit();
       await triggerGeneration({
         content: userMessageContent,
-        attachments,
+        attachmentIds: attachments.map((attachment) => attachment.id),
       });
     };
 
@@ -106,7 +108,11 @@ export const Chat = memo<ChatProps>(
           },
         )}
       >
-        <Timeline open={isTimelineOpen} onOpenChange={setIsTimelineOpen}>
+        <Timeline
+          open={isTimelineOpen}
+          onOpenChange={setIsTimelineOpen}
+          branch={branch}
+        >
           <TimelineContent className="border-b" />
           <div className="flex items-center justify-between gap-2 border-b px-2 py-1 pr-1 text-xs">
             <div className="flex w-full items-center gap-2 truncate font-medium">
@@ -144,8 +150,9 @@ export const Chat = memo<ChatProps>(
             <Messages
               messages={messages}
               branchId={branch.id}
+              project={project}
               integrationTemplates={integrationTemplates}
-              environmentVariables={project.environmentVariables}
+              environmentVariables={environmentVariables}
               setMessages={setMessages}
               setStatus={setStatus}
             />
@@ -168,5 +175,32 @@ export const Chat = memo<ChatProps>(
         />
       </div>
     );
+  },
+  (prevProps, nextProps) => {
+    // Check if environmentVariables changed
+    if (!equal(prevProps.environmentVariables, nextProps.environmentVariables))
+      return false;
+    // Check other props with shallow comparison
+    if (prevProps.project.id !== nextProps.project.id) return false;
+    if (prevProps.branch.id !== nextProps.branch.id) return false;
+    // Check if branch name changed (streamed from generate-branch-name step)
+    if (prevProps.branch.name !== nextProps.branch.name) return false;
+    // Check if version message or description changed (streamed from generate-version-details step)
+    if (
+      prevProps.branch.headVersion.message !==
+      nextProps.branch.headVersion.message
+    )
+      return false;
+    if (
+      prevProps.branch.headVersion.description !==
+      nextProps.branch.headVersion.description
+    )
+      return false;
+    if (
+      prevProps.integrationTemplates.length !==
+      nextProps.integrationTemplates.length
+    )
+      return false;
+    return true;
   },
 );

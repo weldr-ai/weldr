@@ -58,27 +58,25 @@ export async function POST(request: NextRequest) {
     // Development: use localhost
     const url = "http://localhost:8080";
 
-    // Create headers object, preserving original headers but updating origin-related ones
+    // Create headers object with only necessary headers
     const headers = new Headers();
-
-    // Copy all headers from the original request except origin-related ones
-    request.headers.forEach((value, key) => {
-      if (!["host", "origin", "referer"].includes(key.toLowerCase())) {
-        headers.set(key, value);
-      }
-    });
-
-    // Set the new origin and host for the destination
+    headers.set("content-type", "application/json");
     headers.set("host", "localhost:8080");
     headers.set("origin", "http://localhost:8080");
-    headers.set("content-type", "application/json");
+
+    const cookie = request.headers.get("cookie");
+    if (cookie) {
+      headers.set("cookie", cookie);
+    }
+
+    const body = JSON.stringify({ projectId, ...restBody });
 
     const response = await fetch(
       `${url}${endpoint}?${searchParams.toString()}`,
       {
         method: "POST",
         headers,
-        body: JSON.stringify({ projectId, ...restBody }),
+        body,
       },
     );
 

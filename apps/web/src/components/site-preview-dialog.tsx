@@ -29,6 +29,7 @@ import {
 } from "@weldr/ui/components/toggle-group";
 import { cn } from "@weldr/ui/lib/utils";
 
+import { getPreviewUrl } from "@/lib/preview-url";
 import { useTRPC } from "@/lib/trpc/react";
 
 interface SitePreviewDialogProps {
@@ -71,8 +72,8 @@ export function SitePreviewDialog({
 
   const baseUrl = url
     ? url
-    : headVersion?.id
-      ? `https://${headVersion.id}.preview.weldr.app`
+    : headVersion?.id && projectId && branch?.id
+      ? getPreviewUrl(headVersion.id, projectId, branch.id)
       : "";
 
   useEffect(() => {

@@ -81,7 +81,7 @@ export type TStatus =
   | "waiting"
   | "planning"
   | "coding"
-  | "deploying"
+  | "finalizing"
   | null;
 
 export type TextStreamableValue = {

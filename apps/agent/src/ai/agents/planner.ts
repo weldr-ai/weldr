@@ -234,21 +234,28 @@ export async function plannerAgent({
   // Main execution loop for the planner agent
   let shouldContinue = true;
   let iterationCount = 0;
+  let calledCoder = false;
   while (shouldContinue) {
     iterationCount++;
     logger.info(`Starting planner agent iteration ${iterationCount}`);
     const { shouldRecur, callingCoder } = await executePlannerAgent();
 
     shouldContinue = shouldRecur;
+    if (callingCoder) {
+      calledCoder = true;
+    }
 
     if (shouldContinue) {
       logger.info(`Recurring in ${coolDownPeriod}ms...`);
       await new Promise((resolve) => setTimeout(resolve, coolDownPeriod));
     }
+  }
 
-    if (!shouldContinue && !callingCoder) {
-      workflow.suspend();
-    }
+  // Only suspend if we're done AND we didn't call the coder
+  // If we called the coder, the workflow will continue automatically
+  // when the version status changes to "coding"
+  if (!calledCoder) {
+    workflow.suspend();
   }
 
   logger.info("Planner agent completed");
