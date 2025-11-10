@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useReactFlow } from "@xyflow/react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 import type { RouterOutputs } from "@weldr/api";
 import type {
@@ -34,9 +34,8 @@ export function useEventStream({
   const queryClient = useQueryClient();
   const { getNodes, setNodes, updateNodeData } = useReactFlow<CanvasNode>();
 
-  const [eventSourceRef, setEventSourceRef] = useState<EventSource | null>(
-    null,
-  );
+  // Use ref instead of state to avoid triggering re-renders and dependency issues
+  const eventSourceRef = useRef<EventSource | null>(null);
 
   // Reconnection tracking
   const reconnectAttempts = useRef(0);
@@ -45,10 +44,19 @@ export function useEventStream({
   const isConnectingRef = useRef(false);
   const lastEventIdRef = useRef<string | null>(null);
 
+  // Store callbacks in refs to avoid dependency issues
+  const setStatusRef = useRef(setStatus);
+  const setMessagesRef = useRef(setMessages);
+
+  useEffect(() => {
+    setStatusRef.current = setStatus;
+    setMessagesRef.current = setMessages;
+  }, [setStatus, setMessages]);
+
   const connectToEventStream = useCallback(() => {
     // Prevent multiple simultaneous connections
-    if (eventSourceRef || isConnectingRef.current) {
-      return eventSourceRef;
+    if (eventSourceRef.current || isConnectingRef.current) {
+      return eventSourceRef.current;
     }
 
     // Mark as connecting to prevent race conditions
@@ -69,7 +77,7 @@ export function useEventStream({
     const eventSource = new EventSource(url, {
       withCredentials: true,
     });
-    setEventSourceRef(eventSource);
+    eventSourceRef.current = eventSource;
 
     eventSource.onmessage = (event) => {
       try {
@@ -89,25 +97,25 @@ export function useEventStream({
         }
 
         if (chunk.type === "error") {
-          setStatus(null);
+          setStatusRef.current(null);
           if (eventSource.readyState !== EventSource.CLOSED) {
             eventSource.close();
           }
-          setEventSourceRef(null);
+          eventSourceRef.current = null;
           reconnectAttempts.current = 0;
           isConnectingRef.current = false;
           return;
         }
 
-        setStatus("responding");
+        setStatusRef.current("responding");
 
         switch (chunk.type) {
           case "status": {
-            setStatus(chunk.status);
+            setStatusRef.current(chunk.status);
             break;
           }
           case "text": {
-            setMessages((prevMessages) => {
+            setMessagesRef.current((prevMessages) => {
               const lastMessage = prevMessages[prevMessages.length - 1];
 
               // Only append to the last message if it's an assistant message with the same ID
@@ -160,7 +168,7 @@ export function useEventStream({
           }
           case "tool-call": {
             console.log("tool-call", chunk);
-            setMessages((prevMessages) => {
+            setMessagesRef.current((prevMessages) => {
               const lastMessage = prevMessages[prevMessages.length - 1];
               if (lastMessage?.id === chunk.id) {
                 const chatWithLastMessage = prevMessages.slice(0, -1);
@@ -208,7 +216,7 @@ export function useEventStream({
             break;
           }
           case "tool": {
-            setMessages((prevMessages) => {
+            setMessagesRef.current((prevMessages) => {
               const lastMessage = prevMessages[prevMessages.length - 1];
               if (lastMessage?.role === "tool") {
                 const integrationToolResult = chunk.message.content.find(
@@ -285,20 +293,20 @@ export function useEventStream({
 
             switch (updatedStatus) {
               case "planning":
-                setStatus("planning");
+                setStatusRef.current("planning");
                 break;
               case "coding":
-                setStatus("coding");
+                setStatusRef.current("coding");
                 break;
               case "finalizing":
-                setStatus("finalizing");
+                setStatusRef.current("finalizing");
                 break;
               case "completed":
               case "failed":
-                setStatus(null);
+                setStatusRef.current(null);
                 break;
               default:
-                setStatus(null);
+                setStatusRef.current(null);
                 break;
             }
             break;
@@ -341,7 +349,7 @@ export function useEventStream({
             break;
           }
           case "end": {
-            setStatus(null);
+            setStatusRef.current(null);
             return;
           }
         }
@@ -360,7 +368,7 @@ export function useEventStream({
       if (eventSource.readyState !== EventSource.CLOSED) {
         eventSource.close();
       }
-      setEventSourceRef(null);
+      eventSourceRef.current = null;
 
       // Clear any pending reconnection timeout
       if (reconnectTimeoutRef.current) {
@@ -381,7 +389,7 @@ export function useEventStream({
           connectToEventStream();
         }, delay);
       } else {
-        setStatus(null);
+        setStatusRef.current(null);
       }
     };
 
@@ -390,8 +398,6 @@ export function useEventStream({
     projectId,
     branchId,
     branch.headVersion.status,
-    setStatus,
-    setMessages,
     getNodes,
     setNodes,
     updateNodeData,
@@ -412,25 +418,25 @@ export function useEventStream({
     }
 
     // Close EventSource connection if it exists and is not already closed
-    if (eventSourceRef) {
-      if (eventSourceRef.readyState !== EventSource.CLOSED) {
-        eventSourceRef.close();
+    if (eventSourceRef.current) {
+      if (eventSourceRef.current.readyState !== EventSource.CLOSED) {
+        eventSourceRef.current.close();
       }
-      setEventSourceRef(null);
+      eventSourceRef.current = null;
     }
-  }, [eventSourceRef]);
+  }, []);
 
   // Auto-connect to event stream on mount if workflow is active
   useEffect(() => {
     // Only connect if there's no existing connection and workflow might be active
     if (
-      !eventSourceRef &&
+      !eventSourceRef.current &&
       branch.headVersion.status !== "completed" &&
       branch.headVersion.status !== "failed"
     ) {
       connectToEventStream();
     }
-  }, [eventSourceRef, branch.headVersion.status, connectToEventStream]);
+  }, [branch.headVersion.status, connectToEventStream]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -440,7 +446,7 @@ export function useEventStream({
   }, [closeEventStream]);
 
   return {
-    eventSourceRef,
+    eventSourceRef: eventSourceRef.current,
     connectToEventStream,
     closeEventStream,
   };

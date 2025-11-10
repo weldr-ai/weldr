@@ -163,6 +163,7 @@ async function ensureBranchDirLocal(
     where: eq(branches.id, branchId),
     columns: {
       id: true,
+      name: true,
       isMain: true,
       forkedFromVersionId: true,
     },
@@ -244,15 +245,18 @@ async function ensureBranchDirLocal(
     return { branchDir, status: "reused" };
   }
 
-  // Create worktree from commit hash
+  // Create worktree from commit hash with branch name
   await Git.createWorktree(
     projectId,
     mainBranchId,
     branchId,
     forkedVersion.commitHash,
+    branch.name,
   );
 
-  logger.info("Worktree created", { extra: { branchDir } });
+  logger.info("Worktree created", {
+    extra: { branchDir, branchName: branch.name },
+  });
 
   return { branchDir, status: "created" };
 }

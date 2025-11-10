@@ -23,8 +23,18 @@ export async function generateBranchName(messages: ModelMessage[]) {
     - Should accurately reflect the conversation and changes discussed
     `,
     model: registry.languageModel("google:gemini-2.5-flash"),
-    prompt: `Based on the conversation history, generate a branch name that summarizes the changes.`,
-    messages,
+    messages: [
+      ...messages,
+      {
+        role: "user",
+        content: [
+          {
+            type: "text",
+            text: "Based on the conversation history, generate a branch name that summarizes the changes.",
+          },
+        ],
+      },
+    ],
     schema: branchNameSchema,
     maxOutputTokens: 256,
   });

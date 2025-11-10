@@ -37,8 +37,10 @@ export const workflow = createWorkflow({
   .step(generateBranchNameStep, {
     condition: (context) => {
       const branch = context.get("branch");
-      const status = branch.headVersion.status;
-      return status === "coding" && !branch.name;
+      const hasPlaceholderName =
+        branch.name?.startsWith("variant/") ||
+        branch.name?.startsWith("stream/");
+      return hasPlaceholderName;
     },
   })
   .step(generateVersionDetailsStep, {

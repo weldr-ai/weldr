@@ -20,6 +20,7 @@ import {
 } from "@weldr/shared/validators/projects";
 
 import { protectedProcedure } from "../init";
+import { callAgentProxy } from "../utils";
 
 export const projectsRouter = {
   create: protectedProcedure
@@ -32,7 +33,7 @@ export const projectsRouter = {
       let productionAppId: string | undefined;
 
       try {
-        return await ctx.db.transaction(async (tx) => {
+        const project = await ctx.db.transaction(async (tx) => {
           // Only create Fly apps and machines in cloud mode
           // In local mode, skip Fly.io infrastructure creation
           if (!isLocalMode()) {
@@ -163,6 +164,20 @@ export const projectsRouter = {
 
           return project;
         });
+
+        // Trigger agent workflow without waiting for response
+        callAgentProxy(
+          "/trigger",
+          {
+            projectId,
+            branchId: mainBranchId,
+          },
+          ctx.headers,
+        ).catch((error) => {
+          console.error("Failed to trigger agent workflow:", error);
+        });
+
+        return project;
       } catch (error) {
         // Only clean up Fly apps in cloud mode
         if (!isLocalMode()) {

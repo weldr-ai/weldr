@@ -48,7 +48,7 @@ export const betterAuthIntegration = defineIntegration<"better-auth">({
       {
         target: "server",
         runtime: {
-          "better-auth": "^1.3.1",
+          "better-auth": "^1.3.34",
         },
         development: {},
       },
@@ -58,7 +58,7 @@ export const betterAuthIntegration = defineIntegration<"better-auth">({
       packages.push({
         target: "web",
         runtime: {
-          "better-auth": "^1.3.1",
+          "better-auth": "^1.3.34",
         },
         development: {},
       });

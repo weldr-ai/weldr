@@ -202,6 +202,7 @@ export async function plannerAgent({
         userId: user.id,
         messages: [
           {
+            id: messageId,
             role: "assistant",
             content: assistantContent,
             metadata: {

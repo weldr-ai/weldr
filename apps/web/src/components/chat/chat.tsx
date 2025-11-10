@@ -1,5 +1,5 @@
 import equal from "fast-deep-equal";
-import { memo, useEffect, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 
 import type { RouterOutputs } from "@weldr/api";
 import { authClient } from "@weldr/auth/client";
@@ -57,6 +57,9 @@ export const Chat = memo<ChatProps>(
 
     const [isTimelineOpen, setIsTimelineOpen] = useState(true);
 
+    // Track if we're currently submitting to prevent double submissions
+    const isSubmittingRef = useRef(false);
+
     const { eventSourceRef, connectToEventStream, closeEventStream } =
       useEventStream({
         projectId: project.id,
@@ -75,13 +78,32 @@ export const Chat = memo<ChatProps>(
       connectToEventStream,
     });
 
-    const handleSubmit = async () => {
-      await handleMessageSubmit();
-      await triggerGeneration({
-        content: userMessageContent,
-        attachmentIds: attachments.map((attachment) => attachment.id),
-      });
-    };
+    const handleSubmit = useCallback(async () => {
+      // Prevent double submissions
+      if (isSubmittingRef.current) {
+        return;
+      }
+
+      isSubmittingRef.current = true;
+
+      try {
+        await handleMessageSubmit();
+        await triggerGeneration({
+          content: userMessageContent,
+          attachmentIds: attachments.map((attachment) => attachment.id),
+        });
+      } finally {
+        // Reset the flag after a short delay
+        setTimeout(() => {
+          isSubmittingRef.current = false;
+        }, 500);
+      }
+    }, [
+      handleMessageSubmit,
+      triggerGeneration,
+      userMessageContent,
+      attachments,
+    ]);
 
     const editorReferences = useEditorReferences({
       version: branch.headVersion,

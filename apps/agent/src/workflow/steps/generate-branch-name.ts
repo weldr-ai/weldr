@@ -1,9 +1,11 @@
 import { db, eq } from "@weldr/db";
 import { branches } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
+import { getBranchDir, isLocalMode } from "@weldr/shared/state";
 
 import { generateBranchName } from "@/ai/utils/generate-branch-name";
 import { getMessages } from "@/ai/utils/get-messages";
+import { Git } from "@/lib/git";
 import { stream } from "@/lib/stream-utils";
 import { createStep } from "../engine";
 
@@ -18,13 +20,15 @@ export const generateBranchNameStep = createStep({
       versionId: branch.headVersion.id,
     });
 
-    // Only run if branch name is missing
-    if (branch.name) {
-      logger.info("Branch already has a name, skipping generation");
+    // Check if name is a placeholder (temporary name from UI)
+    const hasPlaceholderName =
+      branch.name?.startsWith("variant/") || branch.name?.startsWith("stream/");
+    if (!hasPlaceholderName) {
+      logger.info("Branch has a meaningful name, skipping generation");
       return;
     }
 
-    logger.info("Branch missing name, generating...");
+    logger.info("Branch has placeholder name, generating meaningful name...");
 
     try {
       // Get all messages from the chat to use as input
@@ -35,13 +39,14 @@ export const generateBranchNameStep = createStep({
         return;
       }
 
-      const branchName = await generateBranchName(messages);
+      const oldBranchName = branch.name;
+      const newBranchName = await generateBranchName(messages);
 
       // Update the branch in the database
       const [updatedBranch] = await db
         .update(branches)
         .set({
-          name: branchName,
+          name: newBranchName,
         })
         .where(eq(branches.id, branch.id))
         .returning();
@@ -49,6 +54,22 @@ export const generateBranchNameStep = createStep({
       if (!updatedBranch) {
         logger.error("Failed to update branch with generated name");
         return;
+      }
+
+      // Rename the git branch in local mode
+      if (isLocalMode() && oldBranchName) {
+        try {
+          const branchDir = getBranchDir(project.id, branch.id);
+          await Git.renameBranch(oldBranchName, newBranchName, branchDir);
+          logger.info("Git branch renamed", {
+            extra: { oldBranchName, newBranchName },
+          });
+        } catch (error) {
+          logger.error("Failed to rename git branch", {
+            extra: { error, oldBranchName, newBranchName },
+          });
+          // Don't throw - database is updated, git rename is secondary
+        }
       }
 
       // Update the context with the new data
@@ -67,7 +88,7 @@ export const generateBranchNameStep = createStep({
       });
 
       logger.info("Generated and updated branch name", {
-        branchName,
+        branchName: newBranchName,
       });
     } catch (error) {
       logger.error("Failed to generate branch name", {

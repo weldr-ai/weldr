@@ -42,8 +42,18 @@ export async function generateVersionDetails(messages: ModelMessage[]) {
     - Both should accurately reflect the conversation and changes discussed
     `,
     model: registry.languageModel("google:gemini-2.5-flash"),
-    prompt: `Based on the conversation history, generate a commit message and description that summarize the changes.`,
-    messages,
+    messages: [
+      ...messages,
+      {
+        role: "user",
+        content: [
+          {
+            type: "text",
+            text: "Based on the conversation history, generate a commit message and description that summarize the changes.",
+          },
+        ],
+      },
+    ],
     schema: versionDetailsSchema,
     maxOutputTokens: 1024,
   });

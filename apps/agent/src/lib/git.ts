@@ -394,6 +394,7 @@ export namespace Git {
    * @param mainBranchId - The main branch ID (where the main repo is)
    * @param branchId - The branch ID for the worktree
    * @param commitHash - The commit hash to checkout
+   * @param branchName - The name for the git branch (optional)
    * @returns The path to the worktree
    */
   export async function createWorktree(
@@ -401,6 +402,7 @@ export namespace Git {
     mainBranchId: string,
     branchId: string,
     commitHash: string,
+    branchName?: string,
   ): Promise<string> {
     const logger = Logger.get({
       operation: "git-create-worktree",
@@ -408,6 +410,7 @@ export namespace Git {
       mainBranchId,
       branchId,
       commitHash,
+      branchName,
     });
 
     const mainRepoPath = getMainRepoPath(projectId, mainBranchId);
@@ -427,16 +430,64 @@ export namespace Git {
       }
 
       // Create worktree from commit hash
-      await git.raw(["worktree", "add", worktreePath, commitHash]);
-
-      logger.info("Worktree created", {
-        extra: { worktreePath, commitHash },
-      });
+      // If branchName is provided, create a named branch
+      if (branchName) {
+        await git.raw([
+          "worktree",
+          "add",
+          "-b",
+          branchName,
+          worktreePath,
+          commitHash,
+        ]);
+        logger.info("Worktree created with named branch", {
+          extra: { worktreePath, commitHash, branchName },
+        });
+      } else {
+        await git.raw(["worktree", "add", worktreePath, commitHash]);
+        logger.info("Worktree created", {
+          extra: { worktreePath, commitHash },
+        });
+      }
 
       return worktreePath;
     } catch (error) {
       logger.error("Failed to create worktree", {
         extra: { error, projectId, mainBranchId, branchId, commitHash },
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Rename a git branch.
+   * @param oldName - The old branch name
+   * @param newName - The new branch name
+   * @param branchDir - The branch directory path
+   */
+  export async function renameBranch(
+    oldName: string,
+    newName: string,
+    branchDir: string,
+  ): Promise<void> {
+    const logger = Logger.get({
+      operation: "git-rename-branch",
+      oldName,
+      newName,
+    });
+
+    const git = simpleGit(branchDir);
+
+    try {
+      // Rename the branch (use -m to move/rename)
+      await git.raw(["branch", "-m", oldName, newName]);
+
+      logger.info("Branch renamed", {
+        extra: { oldName, newName },
+      });
+    } catch (error) {
+      logger.error("Failed to rename branch", {
+        extra: { error, oldName, newName },
       });
       throw error;
     }

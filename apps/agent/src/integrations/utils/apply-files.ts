@@ -159,22 +159,19 @@ async function generateFiles({
 
   const category = integrationRegistry.getIntegrationCategory(integration.key);
 
+  const hasAnyIntegration = project.integrationCategories.size > 0;
+
   // Consider both what's installed AND the current integration's category
   const hasFrontend =
     project.integrationCategories.has("frontend") ||
     category.key === "frontend";
   const hasBackend =
     project.integrationCategories.has("backend") || category.key === "backend";
-  const hasNothing =
-    !project.integrationCategories.has("frontend") &&
-    !project.integrationCategories.has("backend") &&
-    category.key !== "frontend" &&
-    category.key !== "backend";
 
   const logger = Logger.get({ projectId: integration.projectId });
 
   logger.info(
-    `Generating files for ${integration.key}: hasFrontend=${hasFrontend}, hasBackend=${hasBackend}, hasNothing=${hasNothing}`,
+    `Generating files for ${integration.key}: hasFrontend=${hasFrontend}, hasBackend=${hasBackend}, hasAnyIntegration=${hasAnyIntegration}`,
   );
   logger.info(
     `Integration categories: ${Array.from(project.integrationCategories).join(", ")}, current category: ${category.key}`,
@@ -206,13 +203,14 @@ async function generateFiles({
 
   const files: FileItem[] = [];
 
-  // Add base files when there's absolutely nothing in the project yet
-  if (hasNothing) {
+  // ALWAYS copy base files first when no integrations have been installed yet
+  if (!hasAnyIntegration) {
+    logger.info("No existing integrations found, copying base files first");
     const baseFiles = await processBaseFiles(branchDir);
     files.push(...baseFiles);
   }
 
-  if (hasBackend || hasNothing) {
+  if (hasBackend || !hasAnyIntegration) {
     const serverPath = path.join(baseDataDir, "server");
     logger.info(
       `Processing server files from ${serverPath} for ${integration.key}`,
@@ -228,7 +226,7 @@ async function generateFiles({
     files.push(...serverFiles);
   }
 
-  if (hasFrontend || hasNothing) {
+  if (hasFrontend || !hasAnyIntegration) {
     const webPath = path.join(baseDataDir, "web");
     const webFiles = await processDirectoryFiles(webPath, "web", branchDir);
     files.push(...webFiles);
