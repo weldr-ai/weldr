@@ -503,13 +503,13 @@ export const integrationsRouter = createTRPCRouter({
             }
 
             const isValidVariable = integrationVariables.some(
-              (variable) => variable === envVar.key,
+              (variable) => variable === mapping.configKey,
             );
 
             if (!isValidVariable) {
               throw new TRPCError({
                 code: "BAD_REQUEST",
-                message: `Environment variable ${envVar.key} not valid for this integration`,
+                message: `Configuration key ${mapping.configKey} not valid for this integration`,
               });
             }
 
