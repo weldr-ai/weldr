@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { db } from "..";
 
 import { aiModels } from "../schema";
@@ -125,7 +126,7 @@ async function main() {
 }
 
 // Run if this file is executed directly
-if (require.main === module) {
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   main().catch((error) => {
     console.error("❌ Error running AI models seed:", error);
     process.exit(1);
