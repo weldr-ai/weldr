@@ -1,325 +1,214 @@
 # Weldr Agent
 
-> **Note**: This README was generated using AI.
+The Weldr Agent is an AI-powered development assistant that autonomously plans, implements, and manages software projects. It orchestrates the complete development lifecycle from user requirements to working code.
 
-A unified development environment for AI agents to develop applications with integrated workflow execution, branch management, and integration installation capabilities.
+## Core Concepts
 
-## Features
+### Workflow Engine
 
-- **Agent-Ready Environment**: Optimized for AI agents to autonomously develop applications
-- **Workflow Execution**: Multi-step workflow system for planning, coding, and completing tasks
-- **Branch Management**: Git-based version control with branch directories and S3 synchronization
-- **Integration System**: Installable integrations for authentication, backend, database, and frontend
-- **Real-time Streaming**: Server-Sent Events (SSE) for real-time workflow updates with resumable streams
-- **Better Auth Integration**: Secure authentication layer for API access
-- **State Recovery**: Automatic recovery of in-progress workflows and enriching jobs on server restart
-- **Declaration Enrichment**: Background job system for generating semantic data and embeddings for code declarations
-- **Shared State Management**: Centralized workspace and state management via `@weldr/shared/state` package
+The agent operates through a **state-based workflow engine** that manages the entire development process. The workflow progresses through distinct phases:
 
-## Architecture
+- **Planning** → **Coding** → **Finalizing** → **Completed**
 
-### Core Components
+Each phase has conditional steps that execute based on the current state, ensuring the right actions happen at the right time. The workflow supports retry logic, timeout handling, and graceful recovery from interruptions.
 
-1. **Agent Server**: Node.js/TypeScript HTTP server built with Hono and OpenAPI
-2. **Workflow Engine**: Multi-step workflow system with status-based execution (pending → planning → coding → complete)
-3. **Git Integration**: Version control system for managing code changes and reverts
-4. **State Management**: Centralized workspace and state management via `@weldr/shared/state` package
-5. **Branch State Manager**: Ephemeral state management for branch directories and workspace
-6. **Integration Installer**: Queue-based system for installing project integrations
-7. **Streaming System**: Redis-based SSE streaming for real-time event delivery with resumable streams
-8. **Enriching Jobs**: Background job queue for generating semantic data and embeddings for code declarations
-9. **Better Auth**: Authentication layer for secure API access
+### Dual-Agent Architecture
 
-### How It Works
+The agent uses two specialized AI agents that work together:
 
-Each user's project gets a single isolated machine on Fly.io that provides:
-- **HTTP API**: RESTful endpoints for triggering workflows, streaming events, and managing integrations
-- **Branch Directories**: Isolated workspace directories per branch for code access
-  - **Local Mode**: `~/.weldr/{projectId}/{branchId}` (stored locally, no S3 sync)
-  - **Cloud Mode**: `/workspace/{branchId}` (stored on SSD with S3 backup/restore)
-- **Workflow Execution**: Multi-step AI agent workflow that plans, codes, and completes tasks
-- **State Persistence**: Branch metadata stored in `weldr-branch-state.json`
-  - **Cloud Mode**: Automatic S3 synchronization for backup and restore
-  - **Local Mode**: Stored locally, no S3 sync required
-- **Active Projects Tracking**: Local mode tracks active projects in `weldr-active-projects.json` for workflow recovery
-- **Integration Management**: Queue-based installation system for project integrations
+#### Planner Agent
+- Analyzes user requirements and project context
+- Breaks down work into structured tasks with acceptance criteria
+- Identifies needed integrations and dependencies
+- Creates declarations (components, endpoints, database models)
+- Orchestrates the overall development strategy
 
-In cloud mode, all state is managed ephemerally - branch directories are stored on local SSD with automatic S3 synchronization for backup and restore. In local mode, branch directories are stored locally at `~/.weldr` without S3 sync.
+#### Coder Agent
+- Executes individual tasks from the execution plan
+- Implements code changes using a rich set of tools
+- Tracks progress across multiple tasks with retry logic
+- Manages task dependencies and execution order
+- Commits changes when tasks are completed
 
-## Deployment
+### Task Management
 
-This application runs as an isolated development machine on Fly.io for each project. Each instance provides a sandboxed workspace with HTTP API endpoints for workflow execution, integration management, and version control.
+Tasks are the atomic units of work in the system:
 
-### Building the Docker Image
+- **Task Types**: Declaration-based tasks (implementing specific components/endpoints) and generic tasks
+- **Task Context**: Each task includes acceptance criteria, implementation notes, and sub-tasks
+- **Progress Tracking**: Tasks move through states: `pending` → `in_progress` → `completed` / `failed`
+- **Retry Logic**: Failed tasks automatically retry up to 3 times with exponential backoff
+- **Execution Plan**: Tasks are ordered based on dependencies and executed sequentially
 
-To build the Docker image for the agent application, run the following command from the root of the monorepo:
+### Declarations System
 
-```bash
-docker build --platform "linux/amd64" -f apps/agent/Dockerfile -t registry.fly.io/weldr-images:weldr-agent .
-```
+The agent extracts and tracks **code declarations** - structured representations of code artifacts that form a **semantic graph** of the entire codebase:
 
-This builds a Linux AMD64 image with all required tools suitable for deployment on Fly.io infrastructure.
+- **Types**: Pages, endpoints, database models, components, utilities
+- **Extraction**: Automatically parses code to identify declarations and their relationships
+- **Dependency Graph**: Tracks call dependencies between declarations, building a complete dependency graph for the full codebase incrementally
+- **Graph Semantic Enrichment**: Enriches the declarations in the dependency graph with semantic data that can be used by the agent to effectively edit the code or humans to understand the implementation details of their systems without reading or understanding code
+- **Canvas Visualization**: High-level declarations are visualized as nodes on a canvas with automatic layout, allowing users to understand the underlying implementation structure and relationships at a glance
+- **Progress Tracking**: Each declaration tracks implementation progress (`pending`, `in_progress`, `enriching`, `completed`)
+- **Relationships**: Declarations maintain both structural (dependency) and semantic relationships for proper execution order and code understanding
 
-### Environment Variables
+### Integrations System
 
-**Required:**
-- `DATABASE_URL`: PostgreSQL connection string (used by `@weldr/db` package)
-- `REDIS_URL`: Redis connection URL (required for streaming functionality)
-- `BETTER_AUTH_SECRET`: Secret key for Better Auth authentication (used by the authentication integration)
-- `ANTHROPIC_API_KEY`: Anthropic API key for Claude models
-- `OPENAI_API_KEY`: OpenAI API key for GPT models and embeddings
-- `GEMINI_API_KEY`: Google Gemini API key for Gemini models
+A modular integration framework that extends project capabilities:
 
-**Required (Cloud Mode Only):**
-- `S3_ACCESS_KEY_ID`: Tigris access key ID (project-specific credentials for bucket operations)
-- `S3_SECRET_ACCESS_KEY`: Tigris secret access key (project-specific credentials for bucket operations)
-- `S3_ENDPOINT`: S3 endpoint URL (defaults to `https://fly.storage.tigris.dev` in cloud mode)
-- `PROJECT_ID`: Project ID for cloud mode (used when `WELDR_MODE=cloud`)
+- **Categories**: Authentication, Database, Backend, Frontend
+- **Dependency Management**: Integrations declare dependencies and install in correct order
+- **Installation Queue**: Integrations are queued, validated, and installed automatically
+- **Environment Variables**: Automatic configuration and mapping of required environment variables
+- **Post-Install Hooks**: Custom setup scripts run after installation
 
-**Optional:**
-- `PORT`: Agent server port (default: `8080`)
-- `CORS_ORIGIN`: CORS allowed origins, comma-separated (default: `http://localhost:3000`)
-- `WELDR_MODE`: Deployment mode - `"local"` or `"cloud"` (defaults to local if unset, falls back to `NODE_ENV`)
-  - `"local"`: Desktop app / local development mode (uses `~/.weldr`, dev servers, no S3 sync)
-  - `"cloud"`: Fly.io infrastructure mode (uses `/workspace`, no dev servers, requires S3 sync)
-- `NODE_ENV`: Node environment (development or production) - used as fallback if `WELDR_MODE` is not set
-- `WORKSPACE_BASE`: Base directory for workspace (default: `~/.weldr` in local mode, `/workspace` in cloud mode)
-- `S3_REGION`: S3 region (default: `auto`, cloud mode only)
+### Branch-Based Development
 
-**Security Notes:**
-- `BETTER_AUTH_SECRET` is generated during integration installation and must be provided for authentication
-- Database and Redis connections are required for the agent to function properly
-- S3 credentials are only required in cloud mode for branch directory synchronization and backup
-- In local mode, branch directories are stored locally at `~/.weldr` and do not require S3 sync
+Each project operates on a **branch-version model**:
 
-## API Endpoints
+- **Branches**: Isolated development environments for each project
+- **Versions**: Snapshots of work within a branch, tracking status and progress
+- **Git Integration**: Automatic git repository initialization and commit management
+- **State Persistence**: Branch state is persisted locally or synced to cloud storage (S3)
+- **Worktree Support**: Uses git worktrees in local mode for efficient branch management
 
-The agent exposes the following HTTP endpoints:
+### Real-Time Streaming
 
-### Workflows
-- `POST /trigger` - Trigger an AI workflow with a user message
-- `GET /stream/:projectId/:branchId` - Subscribe to workflow events via Server-Sent Events (SSE)
-- `POST /revert` - Revert to a previous version by creating a revert commit
+The agent provides real-time updates through a streaming system:
 
-### Integrations
-- `POST /integrations/install` - Install queued integrations for a project
+- **Event Types**: Status updates, task progress, code changes, node updates
+- **Redis Backend**: Uses Redis for pub/sub messaging
+- **WebSocket Support**: Clients receive live updates as work progresses
+- **Progress Visibility**: Real-time feedback on planning, coding, and finalization phases
 
-### Health
-- `GET /health` - Health check endpoint
+## Key Features
 
-## Workflow System
+### Intelligent Code Generation
 
-The agent uses a multi-step workflow system that progresses through the following states:
+- **Context-Aware**: Understands project structure, existing code, and dependencies
+- **Multi-File Operations**: Can create, edit, and delete files across the codebase
+- **Code Search**: Semantic and text-based search to find relevant code
+- **Declaration Queries**: Query related declarations to understand code relationships
 
-1. **pending** → Initial state when a workflow is triggered
-2. **planning** → AI agent plans the task and creates a detailed plan
-3. **coding** → AI agent executes the plan and makes code changes using AI tools
-4. **complete** → Workflow step completes and transitions to finalization
-5. **completed** → Workflow is fully completed and changes are finalized
-6. **failed** → Workflow has failed and cannot continue
+### Rich Tool Set
 
-### Workflow Steps
+The agent has access to a comprehensive set of tools:
 
-- **Plan Step**: Analyzes the user's request and creates a detailed plan (handles `pending` and `planning` states)
-- **Code Step**: Executes the plan by making code changes using AI tools (handles `coding` state)
-- **Complete Step**: Finalizes the workflow and updates the version status (handles `complete` state)
+**File Operations**
+- `read_file`, `write_file`, `edit_file`, `delete_file`
+- `list_dir` for directory exploration
+
+**Code Search**
+- `search_codebase` for semantic code search
+- `grep` for text pattern matching
+- `fzf` for fuzzy file finding
+- `find` for file system queries
+
+**Package Management**
+- `install_packages`, `remove_packages` for dependency management
+
+**Development Tools**
+- `query_related_declarations` to understand code relationships
+- `add_integrations` to install project integrations
+- `done` to mark tasks as complete
 
 ### Workflow Recovery
 
-On server restart, the agent automatically:
-1. Recovers any in-progress workflows (status: `coding`) and resumes execution
-2. Recovers enriching jobs for declarations in `enriching` state
-3. In local mode, uses `weldr-active-projects.json` to identify active projects for recovery
-4. In cloud mode, uses `PROJECT_ID` environment variable to identify the project
+The agent can recover from interruptions:
 
-## Directory Structure
+- **Startup Recovery**: Automatically resumes incomplete workflows on server restart
+- **State Persistence**: Workflow state is saved to the database
+- **Version Tracking**: Each version tracks its status and can be resumed
+- **Local/Cloud Modes**: Supports both local development and cloud deployment
 
-### Local Mode (`~/.weldr/`)
-```
-~/.weldr/                         # Base directory (local mode only)
-  weldr-dev-servers.json          # Running dev servers (managed by web app)
-  weldr-active-projects.json      # Active project tracking
-  weldr-branch-state.json         # Global branch metadata
-  {projectId}/                    # Project directory
-    {branchId}/                   # Branch workspace
-      ...                         # Project code
-```
+### Build & Deployment
 
-### Cloud Mode (`/workspace/`)
-```
-/workspace/                       # Base directory (cloud mode only)
-  weldr-branch-state.json         # Global branch metadata
-  {branchId}/                     # Branch workspace (flat structure)
-    ...                           # Project code
+- **Build System**: Integrates with project build tools (pnpm, npm, etc.)
+- **Snapshot Creation**: Creates Tigris snapshots for cloud deployments
+- **S3 Sync**: Syncs branch state to/from S3 for cloud persistence
+- **Dev Server Management**: Manages local development servers
 
-/usr/local/bin/                   # System scripts
-  create-branch-dir.sh            # Create or reuse branch directory
-  sync-from-s3.sh                 # Sync branch directory from S3 bucket
-  sync-to-s3.sh                   # Sync branch directory to S3 bucket
-  cleanup-lru.sh                  # Remove least recently used branch directories
-```
+### Error Handling & Resilience
 
-**Note**:
-- **Local Mode**: Desktop app / local development with dev servers on ports 9000-9009
-- **Cloud Mode**: Each project runs on its own isolated Fly.io machine
-- Cloud mode uses flat structure: `/workspace/{branchId}` (no projectId nesting)
-- Preview proxying is local-only; cloud mode routes directly to Fly.io machines
+- **Retry Logic**: Automatic retries with configurable attempts and delays
+- **Timeout Protection**: Steps can have timeouts to prevent hanging
+- **Error Logging**: Comprehensive logging with context (project, version, task IDs)
+- **Graceful Degradation**: Failed tasks don't block the entire workflow
 
-## Branch Management
+## Architecture
 
-### Branch Directories
+### Request Flow
 
-Each branch gets its own isolated workspace directory:
-- **Location**:
-  - **Local Mode**: `~/.weldr/{projectId}/{branchId}` (project-organized, multiple projects)
-  - **Cloud Mode**: `/workspace/{branchId}` (flat structure, one project per machine)
-- **S3 Sync** (cloud mode only): Branch directories are synchronized with S3 buckets for backup and restore
-- **Dev Servers** (local mode only): Dev servers managed by web app on ports 9000-9009 with LRU eviction
-- **Cloud Mode**: Each project runs on its own Fly.io machine, no local dev servers or preview proxy
+1. **Trigger**: User sends a message via `/trigger` endpoint
+2. **Context Setup**: Workflow context is initialized with project, branch, and user
+3. **Workflow Execution**: The workflow engine evaluates conditions and executes steps
+4. **Agent Execution**: Planner or Coder agents process the work
+5. **Tool Execution**: Agents use tools to interact with the codebase
+6. **Streaming Updates**: Progress is streamed to clients in real-time
+7. **State Persistence**: Changes are saved to database and file system
+8. **Completion**: Workflow completes and commits changes
 
-### Branch State
+### Data Flow
 
-Branch state is managed through:
-- **Global Branch State**: `weldr-branch-state.json` stores global branch metadata (location, size, last accessed) for all branches
-- **Active Projects**: `weldr-active-projects.json` (local mode only) tracks active projects for recovery
-- **Dev Servers**: `weldr-dev-servers.json` (local mode only) tracks running development servers
-- **Git Repository**: Each branch directory contains a git repository for version control
-- **S3 Backup** (cloud mode only): Branch directories are backed up to S3 for persistence across restarts
-- **State Management**: All state management is centralized in `@weldr/shared/state` package
+- **Database**: Stores projects, branches, versions, tasks, declarations, integrations
+- **File System**: Each branch has its own directory with the codebase
+- **Redis**: Handles real-time event streaming
+- **S3/Tigris**: Cloud storage for branch state and snapshots (cloud mode)
 
-### LRU Cleanup
+### Key Components
 
-When disk space is needed, the system automatically removes least recently used branch directories to free up space. The cleanup process:
-- Monitors volume usage (target: 70%, max: 85%)
-- Removes oldest unused branch directories when needed
-- Preserves active branches and recent work
+- **Workflow Engine** (`src/workflow/`): Orchestrates the development process
+- **AI Agents** (`src/ai/agents/`): Planner and Coder agents
+- **Tools** (`src/ai/tools/`): Capabilities available to agents
+- **Integrations** (`src/integrations/`): Modular integration system
+- **Routes** (`src/routes/`): HTTP API endpoints
+- **Lib** (`src/lib/`): Utilities for git, build, branch state, etc.
 
-## Integration System
+## Development
 
-The agent supports installing integrations for:
-- **Authentication**: Better Auth and other auth providers
-- **Backend**: API frameworks and server technologies (e.g., oRPC)
-- **Database**: Database drivers and ORMs (e.g., PostgreSQL with Drizzle)
-- **Frontend**: UI frameworks and component libraries (e.g., TanStack Start)
+### Prerequisites
 
-### Integration Installation
+- Node.js 22+
+- pnpm
+- Redis (for streaming)
+- PostgreSQL (via @weldr/db package)
+- Git
 
-Integrations are installed via a queue-based system:
-1. Integrations are queued for installation
-2. Installation is processed asynchronously
-3. Integration files are generated and installed in the project
-4. Declarations are extracted and enriched with semantic data
-5. Workflow can be triggered after installation completes
+### Environment Variables
 
-## Declaration Enrichment System
+See `.env.example` for required configuration.
 
-The agent includes a background job system for enriching code declarations with semantic data:
+### Running
 
-### Features
-- **Automatic Enrichment**: Declarations are automatically queued for enrichment after extraction
-- **Semantic Data Generation**: AI-generated semantic descriptions and metadata for code declarations
-- **Embedding Generation**: Vector embeddings for semantic search and code understanding
-- **Queue-Based Processing**: Batched processing (up to 5 jobs concurrently) for efficiency
-- **Retry Logic**: Automatic retry with exponential backoff (max 3 retries)
-- **Recovery**: Enriching jobs are automatically recovered on server restart
+```bash
+# Development
+pnpm dev
 
-### Declaration States
-- **pending** → Declaration extracted but not yet enriched
-- **enriching** → Currently being processed for semantic data generation
-- **completed** → Semantic data and embeddings successfully generated
-
-## Streaming System
-
-The agent uses Server-Sent Events (SSE) for real-time workflow updates:
-
-### Features
-- **Resumable Streams**: Streams can be resumed using `Last-Event-ID` header or `lastEventId` query parameter
-- **Redis Backend**: Events are stored in Redis for reliable delivery and resumption
-- **Multiple Subscribers**: Multiple clients can subscribe to the same workflow
-- **Event Types**: Status updates (thinking, planning, coding), messages, and workflow completion events
-- **Stream ID Management**: Each stream has a unique ID tracked in Redis for resumption
-
-### Stream Endpoint
-
-```
-GET /stream/:projectId/:branchId?lastEventId=<event_id>
+# Production
+pnpm build
+pnpm start
 ```
 
-The stream endpoint supports:
-- **Resumption**: Use `lastEventId` query parameter to resume from a specific event
-- **Automatic Reconnection**: Clients can reconnect and resume from the last event
-- **Event Filtering**: Events are filtered by project and branch via chat ID
-- **Stream ID**: Each stream is assigned a unique ID returned in `X-Stream-ID` header
+### Local vs Cloud Mode
 
-## Port Management
+The agent supports two deployment modes:
 
-- The agent server runs on port `8080` by default (configurable via `PORT` environment variable)
-- CORS is configured to allow requests from specified origins (default: `http://localhost:3000`)
+- **Local Mode**: Uses git worktrees, local file system, no S3 sync
+- **Cloud Mode**: Uses S3 for branch state, Tigris for snapshots, full cloud integration
 
-## Security Considerations
+## API Endpoints
 
-- Better Auth provides authentication layer for API endpoints
-- All endpoints require valid authentication (except `/health`)
-- Project and branch access is validated against the authenticated user
-- Git operations are performed in isolated branch directories
-- Branch directories are isolated per branch to prevent cross-contamination
+- `POST /trigger` - Trigger workflow with user message
+- `GET /events` - Stream workflow events (SSE)
+- `POST /install-integrations` - Install project integrations
+- `POST /revert` - Revert version changes
+- `GET /health` - Health check
 
-## Limitations
+## Integration with Weldr Platform
 
-- **Cloud Mode**: Branch directories are ephemeral (stored on local SSD, backed up to S3)
-- **Cloud Mode**: Maximum volume usage is monitored (85% hard limit, 70% target)
-- **Cloud Mode**: LRU cleanup removes unused branch directories when space is needed
-- **Local Mode**: Branch directories are stored locally at `~/.weldr` (no S3 backup, no volume limits)
-- Workflow recovery only works for workflows in `coding` status
-- One active workflow per branch at a time
+The agent is part of the larger Weldr platform:
 
-## AI Tools
-
-The agent has access to a comprehensive set of AI tools for code manipulation:
-
-- **File Operations**: `read-file`, `write-file`, `edit-files`, `delete-file`
-- **Code Search**: `grep`, `find`, `fzf`, `search-codebase`
-- **Directory Operations**: `list-dir`
-- **Package Management**: `install-packages`, `remove-packages`
-- **Code Generation**: `call-coder` (invokes the coder agent)
-- **Integration Management**: `add-integrations`
-- **Declaration Queries**: `query-related-declarations`
-- **Workflow Control**: `done`, `reapply`
-
-## Available Scripts
-
-### Development
-- `pnpm dev` - Start development server with hot reload (uses `with-env` for environment variables)
-- `pnpm build` - Build for production using tsdown
-- `pnpm start` - Run production server
-- `pnpm typecheck` - Run TypeScript type checking
-
-### System Scripts (in container)
-- `/usr/local/bin/create-branch-dir.sh <branch_id> <project_id>` - Create or reuse branch directory (triggers LRU cleanup if needed)
-- `/usr/local/bin/sync-from-s3.sh <branch_id> <project_id>` - Sync branch directory from S3 bucket (restores latest code)
-- `/usr/local/bin/sync-to-s3.sh <branch_id> <project_id>` - Sync branch directory to S3 bucket (backup)
-- `/usr/local/bin/cleanup-lru.sh` - Remove least recently used branch directories to free space
-
-### Graceful Shutdown
-
-When the agent receives SIGTERM or SIGINT (machine shutdown), it:
-1. Closes Redis connections
-2. Exits gracefully
-
-Branch directories persist on the local SSD volume and are cleaned up automatically by LRU when space is needed.
-
-## Tech Stack
-
-- **Runtime**: Node.js 22 with TypeScript
-- **Framework**: Hono with OpenAPI (Zod validation)
-- **Package Manager**: pnpm
-- **Build Tool**: tsdown
-- **Database**: PostgreSQL (via `@weldr/db` package with Drizzle ORM)
-- **Cache/Queue**: Redis (for streaming functionality and event storage)
-- **Authentication**: Better Auth
-- **Version Control**: Git (via simple-git)
-- **Storage**: Local SSD (20GB) with Tigris S3 backup via rclone
-- **Deployment**: Docker + Fly.io
-- **AI SDK**: Vercel AI SDK with Anthropic, OpenAI, and Google providers
-- **State Management**: `@weldr/shared/state` package for centralized workspace and state management
-- **Logging**: `@weldr/shared/logger` for structured logging
+- **Web App**: Provides UI for interacting with the agent
+- **API Package**: Shared API definitions and types
+- **Database Package**: Shared database schema and queries
+- **Shared Package**: Common utilities and types
