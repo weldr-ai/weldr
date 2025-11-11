@@ -6,8 +6,8 @@ import { db } from "@weldr/db";
 import { versions } from "@weldr/db/schema";
 import { mergeJson } from "@weldr/db/utils";
 import { Logger } from "@weldr/shared/logger";
+import { getBranchDir } from "@weldr/shared/state";
 
-import { Git } from "@/lib/git";
 import { extractAndSaveDeclarations } from "../utils/declarations";
 import { createTool } from "./utils";
 
@@ -49,11 +49,10 @@ export const writeFileTool = createTool({
 
     logger.info(`Writing file: ${filePath}`);
 
-    const workspaceDir = Git.getBranchWorkspaceDir(branch.id, branch.isMain);
+    const branchDir = getBranchDir(project.id, branch.id);
+    const fullPath = path.resolve(branchDir, filePath);
 
-    const fullPath = path.resolve(workspaceDir, filePath);
-
-    if (!fullPath.startsWith(workspaceDir)) {
+    if (!fullPath.startsWith(branchDir)) {
       logger.error("Path traversal attempt detected", {
         extra: {
           filePath,
@@ -106,7 +105,7 @@ export const writeFileTool = createTool({
       context,
       filePath,
       sourceCode: content,
-      workspaceDir,
+      workspaceDir: branchDir,
     });
 
     await db.update(versions).set({

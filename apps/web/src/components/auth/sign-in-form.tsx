@@ -61,7 +61,7 @@ export function SignInForm({
       email: data.email,
       password: data.password,
       rememberMe: data.rememberMe === "true",
-      callbackURL: asDialog ? "/" : undefined,
+      callbackURL: asDialog ? undefined : "/",
       fetchOptions: {
         onResponse: () => {
           setIsSubmitting(false);

@@ -6,17 +6,22 @@ import {
   primaryKey,
   text,
   timestamp,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 import { nanoid } from "@weldr/shared/nanoid";
-import type { IntegrationKey, IntegrationOptions } from "@weldr/shared/types";
+import type {
+  IntegrationInstallationStatus,
+  IntegrationKey,
+  IntegrationOptions,
+} from "@weldr/shared/types";
 
 import { users } from "./auth";
 import { declarations } from "./declarations";
 import { environmentVariables } from "./environment-variables";
 import { integrationTemplates } from "./integration-templates";
 import { projects } from "./projects";
-import { integrationVersions } from "./versions";
+import { versions } from "./versions";
 
 export const integrations = pgTable(
   "integrations",
@@ -60,7 +65,7 @@ export const integrationsRelations = relations(
     }),
     environmentVariableMappings: many(integrationEnvironmentVariables),
     declarations: many(declarations),
-    versions: many(integrationVersions),
+    installations: many(integrationInstallations),
   }),
 );
 
@@ -92,6 +97,58 @@ export const integrationEnvironmentVariablesRelations = relations(
     environmentVariable: one(environmentVariables, {
       fields: [integrationEnvironmentVariables.environmentVariableId],
       references: [environmentVariables.id],
+    }),
+  }),
+);
+
+export const integrationInstallations = pgTable(
+  "integration_installations",
+  {
+    id: text("id").primaryKey().$defaultFn(nanoid),
+    integrationId: text("integration_id")
+      .references(() => integrations.id, { onDelete: "cascade" })
+      .notNull(),
+    versionId: text("version_id")
+      .references(() => versions.id, { onDelete: "cascade" })
+      .notNull(),
+    status: text("status")
+      .$type<IntegrationInstallationStatus>()
+      .notNull()
+      .default("installing"),
+    installedAt: timestamp("installed_at"),
+    installationMetadata: jsonb("installation_metadata").$type<{
+      filesCreated?: string[];
+      packagesInstalled?: string[];
+      declarationsAdded?: string[];
+      error?: string;
+    }>(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (t) => [
+    uniqueIndex("integration_installations_unique_idx").on(
+      t.integrationId,
+      t.versionId,
+    ),
+    index("integration_installations_version_idx").on(t.versionId),
+    index("integration_installations_integration_idx").on(t.integrationId),
+    index("integration_installations_status_idx").on(t.status),
+  ],
+);
+
+export const integrationInstallationsRelations = relations(
+  integrationInstallations,
+  ({ one }) => ({
+    integration: one(integrations, {
+      fields: [integrationInstallations.integrationId],
+      references: [integrations.id],
+    }),
+    version: one(versions, {
+      fields: [integrationInstallations.versionId],
+      references: [versions.id],
     }),
   }),
 );

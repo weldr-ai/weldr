@@ -29,6 +29,7 @@ import {
 } from "@weldr/ui/components/toggle-group";
 import { cn } from "@weldr/ui/lib/utils";
 
+import { getPreviewUrl } from "@/lib/preview-url";
 import { useTRPC } from "@/lib/trpc/react";
 
 interface SitePreviewDialogProps {
@@ -54,18 +55,25 @@ export function SitePreviewDialog({
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
-  const { projectId } = useParams<{ projectId: string }>();
-  const project = queryClient.getQueryData(
-    trpc.projects.byId.queryKey({ id: projectId }),
+  const { projectId, branchId } = useParams<{
+    projectId: string;
+    branchId?: string;
+  }>();
+
+  const branch = queryClient.getQueryData(
+    trpc.branches.byIdOrMain.queryKey({
+      id: branchId,
+      projectId,
+    }),
   );
 
-  const headVersion = project?.branch.headVersion;
+  const headVersion = branch?.headVersion;
   const [currentPath, setCurrentPath] = useState("");
 
   const baseUrl = url
     ? url
-    : headVersion?.id
-      ? `https://${headVersion.id}.preview.weldr.app`
+    : headVersion?.id && projectId && branch?.id
+      ? getPreviewUrl(headVersion.id, projectId, branch.id)
       : "";
 
   useEffect(() => {

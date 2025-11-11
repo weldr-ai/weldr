@@ -3,6 +3,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@weldr/auth";
 import { and, db, eq } from "@weldr/db";
 import { branches, projects } from "@weldr/db/schema";
+import { isLocalMode } from "@weldr/shared/state";
 
 export async function GET(
   request: NextRequest,
@@ -30,7 +31,6 @@ export async function GET(
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
 
-    // Verify the branch exists and belongs to the project
     const branch = await db.query.branches.findFirst({
       where: and(eq(branches.id, branchId), eq(branches.projectId, projectId)),
     });
@@ -39,8 +39,8 @@ export async function GET(
       return NextResponse.json({ error: "Branch not found" }, { status: 404 });
     }
 
-    if (process.env.NODE_ENV === "production") {
-      const appName = `app-development-${projectId}`;
+    if (!isLocalMode()) {
+      const appName = `project-development-${projectId}`;
 
       return new NextResponse(null, {
         status: 200,

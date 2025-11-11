@@ -11,20 +11,19 @@ import { createTool } from "./utils";
 
 export const callCoderTool = createTool({
   name: "call_coder",
-  description: "Hands off the project to the coder agent to start development.",
+  description:
+    "MANDATORY FINAL ACTION: Hands off the project to the coder agent to start development. You MUST call this tool after generating tasks - this is not optional.",
   whenToUse:
-    "After all setup is complete and the user has confirmed the plan. This should be the final action.",
+    "MANDATORY: After all setup is complete, tasks are generated, and the plan is ready. This MUST be your final action - do not finish without calling this tool. Call this immediately after task generation is complete.",
   inputSchema: planSchema.describe("The plan to be completed"),
   outputSchema: z.discriminatedUnion("success", [
     z.object({
       success: z.literal(true),
-      commitMessage: z.string(),
-      description: z.string(),
       tasks: z.array(taskSchema),
     }),
   ]),
   execute: async ({ input, context }) => {
-    const { commitMessage, description, acceptanceCriteria } = input;
+    const { acceptanceCriteria, tasks } = input;
     const branch = context.get("branch");
     const project = context.get("project");
 
@@ -34,16 +33,12 @@ export const callCoderTool = createTool({
       input,
     });
 
-    logger.info(
-      `Calling coder agent with commit message: ${commitMessage} and description: ${description}`,
-    );
+    logger.info("Calling coder agent to start development");
 
     const [updatedVersion] = await db
       .update(versions)
       .set({
         status: "coding",
-        message: commitMessage,
-        description,
         acceptanceCriteria,
       })
       .where(eq(versions.id, branch.headVersion.id))
@@ -56,21 +51,21 @@ export const callCoderTool = createTool({
       );
     }
 
+    context.set("branch", {
+      ...branch,
+      headVersion: updatedVersion,
+    });
+
     await createTasks({
-      taskList: input.tasks,
+      taskList: tasks,
       context,
     });
 
-    context.set("branch", { ...branch, headVersion: updatedVersion });
-
     await stream(updatedVersion.chatId, {
-      type: "update_project",
+      type: "update_branch",
       data: {
-        ...project,
-        branch: {
-          ...branch,
-          headVersion: updatedVersion,
-        },
+        ...branch,
+        headVersion: updatedVersion,
       },
     });
 
@@ -78,9 +73,7 @@ export const callCoderTool = createTool({
 
     return {
       success: true as const,
-      commitMessage: input.commitMessage,
-      description: input.description,
-      tasks: input.tasks,
+      tasks,
     };
   },
 });

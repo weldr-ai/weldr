@@ -1,9 +1,9 @@
 import { z } from "zod";
 
 import { Logger } from "@weldr/shared/logger";
+import { getBranchDir } from "@weldr/shared/state";
 
 import { runCommand } from "@/lib/commands";
-import { Git } from "@/lib/git";
 import { createTool } from "./utils";
 
 export const listDirTool = createTool({
@@ -64,9 +64,8 @@ export const listDirTool = createTool({
       };
     }
 
-    const workspaceDir = Git.getBranchWorkspaceDir(branch.id, branch.isMain);
-
-    const targetPath = path ? `${workspaceDir}/${path}` : workspaceDir;
+    const branchDir = getBranchDir(project.id, branch.id);
+    const targetPath = path ? `${branchDir}/${path}` : branchDir;
 
     const args = [
       "-L",
@@ -85,7 +84,7 @@ export const listDirTool = createTool({
     args.push(targetPath);
 
     const { stdout, stderr, exitCode } = await runCommand("tree", args, {
-      cwd: workspaceDir,
+      cwd: branchDir,
     });
 
     if (exitCode !== 0) {

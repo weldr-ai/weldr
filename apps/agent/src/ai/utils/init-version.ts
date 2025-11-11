@@ -60,6 +60,9 @@ export const initVersion = async ({
       .values({
         projectId,
         userId,
+        sequenceNumber: branch.headVersion?.sequenceNumber
+          ? branch.headVersion.sequenceNumber + 1
+          : 1,
         number: branch.headVersion?.number ? branch.headVersion.number + 1 : 1,
         parentVersionId: branch.headVersion?.id,
         chatId: versionChat.id,

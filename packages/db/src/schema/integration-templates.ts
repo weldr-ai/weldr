@@ -18,6 +18,7 @@ import type {
 } from "@weldr/shared/types";
 
 import { integrationCategories } from "./integration-categories";
+import { integrations } from "./integrations";
 
 export const integrationTemplates = pgTable(
   "integration_templates",
@@ -51,10 +52,11 @@ export const integrationTemplates = pgTable(
 
 export const integrationTemplatesRelations = relations(
   integrationTemplates,
-  ({ one }) => ({
+  ({ one, many }) => ({
     category: one(integrationCategories, {
       fields: [integrationTemplates.categoryId],
       references: [integrationCategories.id],
     }),
+    integrations: many(integrations),
   }),
 );

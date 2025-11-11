@@ -1,4 +1,4 @@
-import { generateObject } from "ai";
+import { generateObject, type ModelMessage } from "ai";
 import { z } from "zod";
 
 import { Logger } from "@weldr/shared/logger";
@@ -16,7 +16,7 @@ const projectSchema = z.object({
     .describe("A brief, clear description of the project (1-2 sentences)"),
 });
 
-export async function generateProjectInfo(input: string) {
+export async function generateProjectInfo(messages: ModelMessage[]) {
   const { object } = await generateObject({
     system: `You are a helpful assistant that generates concise, professional project titles and descriptions.
 
@@ -38,13 +38,12 @@ EXAMPLES:
 { title: "Customer Dashboard", description: "A management interface for tracking customers and processing their orders efficiently." }
 { title: "Book Store", description: "An online marketplace for purchasing and selling books with secure payment processing." }`,
     model: registry.languageModel("google:gemini-2.5-flash"),
-    prompt: `Generate a title and description for the following project: ${input}`,
+    messages,
     schema: projectSchema,
     maxOutputTokens: 1024,
   });
 
   Logger.info("Generated project title and description", {
-    input,
     title: object.title,
     description: object.description,
   });

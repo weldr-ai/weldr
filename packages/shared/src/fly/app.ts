@@ -10,6 +10,7 @@ import {
 } from "./config";
 import { Machine } from "./machine";
 import { Secret } from "./secret";
+import type { paths } from "./types";
 
 export namespace App {
   export const get = async ({
@@ -21,7 +22,7 @@ export namespace App {
   }) => {
     try {
       const app = await ofetch<{ id: string }>(
-        `${flyApiHostname}/v1/apps/app-${type}-${projectId}`,
+        `${flyApiHostname}/v1/apps/project-${projectId}-${type}`,
         {
           headers: {
             Authorization: `Bearer ${flyApiKey}`,
@@ -40,13 +41,18 @@ export namespace App {
     }
   };
 
-  export const create = async ({
-    type,
-    projectId,
-  }: {
-    type: FlyAppType;
-    projectId: string;
-  }) => {
+  export const create = async (
+    options:
+      | {
+          type: "development";
+          projectId: string;
+          branchId: string;
+        }
+      | {
+          type: "production";
+          projectId: string;
+        },
+  ) => {
     try {
       const app = await ofetch<{ id: string }>(`${flyApiHostname}/v1/apps`, {
         method: "POST",
@@ -55,11 +61,11 @@ export namespace App {
           Authorization: `Bearer ${flyApiKey}`,
         },
         body: {
-          app_name: `app-${type}-${projectId}`,
-          network: `net-${type}-${projectId}`,
+          app_name: `project-${options.type}-${options.projectId}`,
+          network: `net-${options.type}-${options.projectId}`,
           org_slug: flyOrgSlug,
         },
-        ...ofetchConfig({ tag: `fly:app:create:${projectId}` }),
+        ...ofetchConfig({ tag: `fly:app:create:${options.projectId}` }),
       });
 
       if (!app?.id) {
@@ -67,38 +73,36 @@ export namespace App {
       }
 
       await allocateIpAddress({
-        type,
-        projectId,
+        type: options.type,
+        projectId: options.projectId,
       });
 
-      if (type === "development") {
-        // Create Tigris bucket
-        const bucketCredentials = await Tigris.bucket.create(
-          `app-${projectId}`,
+      if (options.type === "development") {
+        const projectCredentials = await Tigris.credentials.create(
+          options.projectId,
+        );
+        await Tigris.bucket.create(
+          `project-${options.projectId}-branch-${options.branchId}`,
         );
 
         const productionDeployToken = await deployToken({
           type: "production",
-          projectId,
+          projectId: options.projectId,
         });
 
         await Promise.all([
           // Create secrets
           Secret.create({
             type: "development",
-            projectId,
+            projectId: options.projectId,
             secrets: [
               {
                 key: "S3_ACCESS_KEY_ID",
-                value: bucketCredentials.accessKeyId,
+                value: projectCredentials.accessKeyId,
               },
               {
                 key: "S3_SECRET_ACCESS_KEY",
-                value: bucketCredentials.secretAccessKey,
-              },
-              {
-                key: "S3_BUCKET_NAME",
-                value: `app-${projectId}`,
+                value: projectCredentials.secretAccessKey,
               },
               {
                 key: "FLY_PRODUCTION_DEPLOY_TOKEN",
@@ -106,17 +110,11 @@ export namespace App {
               },
             ],
           }),
-          // Create development node
-          Machine.create({
-            type: "development",
-            projectId,
-            config: Machine.presets.development(projectId),
-          }),
-          // Create standby node
-          Machine.create({
-            type: "development",
-            projectId,
-            config: Machine.presets.development(projectId),
+          // Create development node with volume
+          Machine.createWithVolume({
+            projectId: options.projectId,
+            config: Machine.presets
+              .development as paths["/apps/{app_name}/machines"]["post"]["requestBody"]["content"]["application/json"]["config"],
           }),
         ]);
       }
@@ -125,16 +123,21 @@ export namespace App {
     } catch (error) {
       console.error("Error creating app:", {
         error: error instanceof Error ? error.message : String(error),
-        projectId,
-        type,
+        projectId: options.projectId,
+        type: options.type,
       });
       await Promise.all([
         destroy({
-          type,
-          projectId,
+          type: options.type,
+          projectId: options.projectId,
         }),
-        ...(type === "development"
-          ? [Tigris.bucket.delete(`app-${projectId}`)]
+        ...(options.type === "development"
+          ? [
+              Tigris.bucket.delete(
+                `project-${options.projectId}-branch-${options.branchId}`,
+              ),
+              Tigris.credentials.delete(options.projectId),
+            ]
           : []),
       ]);
       throw error;
@@ -150,7 +153,7 @@ export namespace App {
   }) => {
     const deployToken = await ofetch<{
       token: string;
-    }>(`${flyApiHostname}/v1/apps/app-${type}-${projectId}/deploy_token`, {
+    }>(`${flyApiHostname}/v1/apps/project-${projectId}-${type}/deploy_token`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${flyApiKey}`,
@@ -197,7 +200,7 @@ export namespace App {
         `,
         variables: {
           input: {
-            appId: `app-${type}-${projectId}`,
+            appId: `project-${projectId}-${type}`,
             type: "private_v6",
           },
         },
@@ -218,7 +221,7 @@ export namespace App {
     projectId: string;
   }) => {
     try {
-      await ofetch(`${flyApiHostname}/v1/apps/app-${type}-${projectId}`, {
+      await ofetch(`${flyApiHostname}/v1/apps/project-${projectId}-${type}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${flyApiKey}`,

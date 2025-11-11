@@ -10,7 +10,7 @@ import type {
 import type { IntegrationToolResultPart } from "@/components/integrations/shared/types";
 
 interface UseStatusOptions {
-  version: RouterOutputs["versions"]["byId"];
+  version: RouterOutputs["branches"]["byIdOrMain"]["headVersion"];
   messages: ChatMessage[];
   project: {
     integrations: Array<{
@@ -40,8 +40,8 @@ export function useStatus({ version, messages, project }: UseStatusOptions) {
       case "coding":
         setStatus("coding");
         break;
-      case "deploying":
-        setStatus("deploying");
+      case "finalizing":
+        setStatus("finalizing");
         break;
       case "completed":
       case "failed":

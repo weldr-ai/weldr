@@ -1,6 +1,6 @@
 import { promises as fs } from "node:fs";
 import * as path from "node:path";
-import { and, eq, not } from "drizzle-orm";
+import { and, eq, inArray, not } from "drizzle-orm";
 
 import { db } from "@weldr/db";
 import {
@@ -11,9 +11,14 @@ import {
 } from "@weldr/db/schema";
 import { mergeJson } from "@weldr/db/utils";
 import { Logger } from "@weldr/shared/logger";
+import {
+  getActiveProjectIds,
+  getBranchDir,
+  isLocalMode,
+  WORKSPACE_DIR,
+} from "@weldr/shared/state";
 import type { DeclarationCodeMetadata } from "@weldr/shared/types/declarations";
 
-import { Git } from "@/lib/git";
 import { embedDeclaration } from "./embed-declarations";
 import { enrichDeclaration } from "./enrich";
 
@@ -75,128 +80,152 @@ export async function queueEnrichingJob(
 
 export async function recoverEnrichingJobs(): Promise<void> {
   Logger.info("Recovering enriching jobs");
-  let project: typeof projects.$inferSelect | undefined;
 
-  if (process.env.NODE_ENV === "development") {
-    project = await db.query.projects.findFirst({
-      orderBy: (projects, { desc }) => [desc(projects.createdAt)],
+  let projectsList: Array<typeof projects.$inferSelect> = [];
+
+  if (isLocalMode()) {
+    // In local mode, recover projects based on IDs saved in metadata file
+    const activeProjectIds = getActiveProjectIds();
+
+    if (activeProjectIds.length === 0) {
+      Logger.info("No active projects found in metadata file");
+      return;
+    }
+
+    // Query projects by IDs from metadata file
+    const projectsFromMetadata = await db.query.projects.findMany({
+      where: inArray(projects.id, activeProjectIds),
     });
-  } else if (process.env.NODE_ENV === "production") {
-    project = await db.query.projects.findFirst({
-      // biome-ignore lint/style/noNonNullAssertion: reason
-      where: eq(projects.id, process.env.PROJECT_ID!),
+
+    projectsList = projectsFromMetadata;
+  } else {
+    // In cloud mode, each machine handles one project via PROJECT_ID
+    if (!process.env.PROJECT_ID) {
+      Logger.warn("PROJECT_ID not set in cloud mode");
+      return;
+    }
+
+    const project = await db.query.projects.findFirst({
+      where: eq(projects.id, process.env.PROJECT_ID),
     });
+    if (project) {
+      projectsList = [project];
+    }
   }
 
-  if (!project) {
-    throw new Error("Project not found");
+  if (projectsList.length === 0) {
+    return;
   }
 
-  const logger = Logger.get({
-    projectId: project.id,
-  });
-
-  try {
-    // Find declarations that are still in "enriching" state
-    const versionsList = await db.query.versions.findMany({
-      where: and(
-        not(eq(versions.status, "planning")),
-        eq(versions.projectId, project.id),
-      ),
-      with: {
-        branch: true,
-      },
+  for (const project of projectsList) {
+    const logger = Logger.get({
+      projectId: project.id,
     });
 
-    for (const version of versionsList) {
-      const declarationsList = await db.query.versionDeclarations.findMany({
-        where: eq(versionDeclarations.versionId, version.id),
+    try {
+      // Find declarations that are still in "enriching" state
+      const versionsList = await db.query.versions.findMany({
+        where: and(
+          not(eq(versions.status, "planning")),
+          eq(versions.projectId, project.id),
+        ),
         with: {
-          declaration: {
-            columns: {
-              id: true,
-              path: true,
-              metadata: true,
-              progress: true,
-            },
-          },
+          branch: true,
         },
       });
 
-      const enrichingDeclarations = declarationsList
-        .map((declaration) => declaration.declaration)
-        .filter((declaration) => declaration.progress === "enriching");
-
-      if (enrichingDeclarations.length > 0) {
-        logger.info(
-          "Found declarations in enriching state, queueing for processing",
-          {
-            extra: { count: enrichingDeclarations.length },
+      for (const version of versionsList) {
+        const declarationsList = await db.query.versionDeclarations.findMany({
+          where: eq(versionDeclarations.versionId, version.id),
+          with: {
+            declaration: {
+              columns: {
+                id: true,
+                path: true,
+                metadata: true,
+                progress: true,
+              },
+            },
           },
-        );
+        });
 
-        // Add recovered declarations to queue
-        for (const declaration of enrichingDeclarations) {
-          const codeMetadata = declaration.metadata?.codeMetadata;
+        const enrichingDeclarations = declarationsList
+          .map((declaration) => declaration.declaration)
+          .filter((declaration) => declaration.progress === "enriching");
 
-          if (!declaration.path) {
-            continue;
-          }
+        if (enrichingDeclarations.length > 0) {
+          logger.info(
+            "Found declarations in enriching state, queueing for processing",
+            {
+              extra: { count: enrichingDeclarations.length },
+            },
+          );
 
-          let sourceCodeContent: string;
-          try {
-            const workspaceDir = Git.getBranchWorkspaceDir(
-              version.branchId,
-              version.branch.isMain,
-            );
+          // Add recovered declarations to queue
+          for (const declaration of enrichingDeclarations) {
+            const codeMetadata = declaration.metadata?.codeMetadata;
 
-            const fullPath = path.resolve(workspaceDir, declaration.path);
+            if (!declaration.path) {
+              continue;
+            }
 
-            if (!fullPath.startsWith(workspaceDir)) {
-              logger.error("Path traversal attempt detected", {
+            let sourceCodeContent: string;
+            try {
+              // In local mode, use branch-specific directory
+              // In cloud mode, use WORKSPACE_DIR
+              const workspaceDir = isLocalMode()
+                ? getBranchDir(project.id, version.branch.id)
+                : WORKSPACE_DIR;
+
+              const fullPath = path.resolve(workspaceDir, declaration.path);
+
+              // Security check: ensure path is within workspace
+              if (!fullPath.startsWith(workspaceDir)) {
+                logger.error("Path traversal attempt detected", {
+                  extra: {
+                    declarationId: declaration.id,
+                    path: declaration.path,
+                  },
+                });
+                continue;
+              }
+
+              sourceCodeContent = await fs.readFile(fullPath, "utf-8");
+            } catch (error) {
+              logger.error("Failed to read source code", {
                 extra: {
                   declarationId: declaration.id,
-                  path: declaration.path,
+                  error: error instanceof Error ? error.message : String(error),
                 },
               });
               continue;
             }
 
-            sourceCodeContent = await fs.readFile(fullPath, "utf-8");
-          } catch (error) {
-            logger.error("Failed to read source code", {
-              extra: {
+            if (codeMetadata && declaration.path) {
+              jobQueue.push({
                 declarationId: declaration.id,
-                error: error instanceof Error ? error.message : String(error),
-              },
-            });
-            continue;
+                codeMetadata,
+                filePath: declaration.path,
+                sourceCode: sourceCodeContent,
+                projectId: project.id,
+              });
+            }
           }
 
-          if (codeMetadata && declaration.path) {
-            jobQueue.push({
-              declarationId: declaration.id,
-              codeMetadata,
-              filePath: declaration.path,
-              sourceCode: sourceCodeContent,
-              projectId: project.id,
-            });
+          // Start processing if we have jobs
+          if (jobQueue.length > 0) {
+            processDeclarationsQueue();
           }
-        }
-
-        // Start processing if we have jobs
-        if (jobQueue.length > 0) {
-          processDeclarationsQueue();
         }
       }
+    } catch (error) {
+      logger.error("Error recovering semantic data jobs", {
+        extra: {
+          error: error instanceof Error ? error.message : String(error),
+          projectId: project.id,
+        },
+      });
     }
-  } catch (error) {
-    logger.error("Error recovering semantic data jobs", {
-      extra: {
-        error: error instanceof Error ? error.message : String(error),
-        projectId: project.id,
-      },
-    });
   }
 
   Logger.info("Recovered enriching jobs");

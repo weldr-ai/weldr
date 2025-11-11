@@ -1,9 +1,9 @@
 import { z } from "zod";
 
 import { Logger } from "@weldr/shared/logger";
+import { getBranchDir } from "@weldr/shared/state";
 
 import { runCommand } from "@/lib/commands";
-import { Git } from "@/lib/git";
 import { createTool } from "./utils";
 
 export const removePackagesTool = createTool({
@@ -35,13 +35,13 @@ export const removePackagesTool = createTool({
 
     logger.info(`Removing packages: ${input.packages.join(", ")}`);
 
-    const workspaceDir = Git.getBranchWorkspaceDir(branch.id, branch.isMain);
+    const branchDir = getBranchDir(project.id, branch.id);
 
     const { stderr, exitCode, success } = await runCommand(
       "bun",
       ["remove", ...input.packages],
       {
-        cwd: workspaceDir,
+        cwd: branchDir,
       },
     );
 

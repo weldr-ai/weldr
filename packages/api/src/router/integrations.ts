@@ -7,9 +7,9 @@ import {
   branches,
   environmentVariables,
   integrationEnvironmentVariables,
+  integrationInstallations,
   integrations,
   integrationTemplates,
-  integrationVersions,
 } from "@weldr/db/schema";
 import {
   createBatchIntegrationsSchema,
@@ -18,50 +18,7 @@ import {
 } from "@weldr/shared/validators/integrations";
 
 import { createTRPCRouter, protectedProcedure } from "../init";
-
-async function triggerInstallation({
-  projectId,
-  branchId,
-  triggerWorkflow = false,
-  headers,
-}: {
-  projectId: string;
-  branchId: string;
-  triggerWorkflow?: boolean;
-  headers: Headers;
-}): Promise<void> {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-  const url = `${baseUrl}/api/integrations/install`;
-
-  const requestHeaders = new Headers();
-
-  // Forward authorization headers
-  headers.forEach((value, key) => {
-    if (
-      key.toLowerCase().startsWith("cookie") ||
-      key.toLowerCase() === "authorization"
-    ) {
-      requestHeaders.set(key, value);
-    }
-  });
-
-  requestHeaders.set("content-type", "application/json");
-
-  const response = await fetch(url, {
-    method: "POST",
-    headers: requestHeaders,
-    body: JSON.stringify({
-      projectId,
-      branchId,
-      triggerWorkflow,
-    }),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Failed to trigger installation: ${errorText}`);
-  }
-}
+import { callAgentProxy } from "../utils";
 
 export const integrationsRouter = createTRPCRouter({
   install: protectedProcedure
@@ -109,10 +66,10 @@ export const integrationsRouter = createTRPCRouter({
 
         // Check if already queued or installed
         const existingInstallation =
-          await tx.query.integrationVersions.findFirst({
+          await tx.query.integrationInstallations.findFirst({
             where: and(
-              eq(integrationVersions.integrationId, input.integrationId),
-              eq(integrationVersions.versionId, input.versionId),
+              eq(integrationInstallations.integrationId, input.integrationId),
+              eq(integrationInstallations.versionId, input.versionId),
             ),
           });
 
@@ -124,7 +81,7 @@ export const integrationsRouter = createTRPCRouter({
         }
 
         // Create the installation queue entry
-        await tx.insert(integrationVersions).values({
+        await tx.insert(integrationInstallations).values({
           integrationId: input.integrationId,
           versionId: input.versionId,
           status: "queued",
@@ -134,13 +91,15 @@ export const integrationsRouter = createTRPCRouter({
           `[integrations.install] Queued integration ${integration.key} for version ${input.versionId}`,
         );
 
-        // Trigger the installation
-        await triggerInstallation({
-          projectId: version.projectId,
-          branchId: version.branchId,
-          triggerWorkflow: input.triggerWorkflow,
-          headers: ctx.headers,
-        });
+        await callAgentProxy(
+          "/integrations/install",
+          {
+            projectId: version.projectId,
+            branchId: version.branchId,
+            triggerWorkflow: input.triggerWorkflow,
+          },
+          ctx.headers,
+        );
       });
 
       return { success: true };
@@ -258,7 +217,7 @@ export const integrationsRouter = createTRPCRouter({
           });
 
           if (branch?.headVersionId) {
-            await tx.insert(integrationVersions).values({
+            await tx.insert(integrationInstallations).values({
               integrationId: integration.id,
               versionId: branch.headVersionId,
               status: "queued",
@@ -280,7 +239,7 @@ export const integrationsRouter = createTRPCRouter({
       // Trigger installation if branchId was provided
       if (input.branchId) {
         try {
-          await triggerInstallation({
+          await callAgentProxy("/integrations/install", {
             projectId: input.projectId,
             branchId: input.branchId,
             triggerWorkflow: false,
@@ -544,13 +503,13 @@ export const integrationsRouter = createTRPCRouter({
             }
 
             const isValidVariable = integrationVariables.some(
-              (variable) => variable === envVar.key,
+              (variable) => variable === mapping.configKey,
             );
 
             if (!isValidVariable) {
               throw new TRPCError({
                 code: "BAD_REQUEST",
-                message: `Environment variable ${envVar.key} not valid for this integration`,
+                message: `Configuration key ${mapping.configKey} not valid for this integration`,
               });
             }
 
@@ -563,7 +522,7 @@ export const integrationsRouter = createTRPCRouter({
 
           // Queue integration for installation if branchId is provided
           if (headVersionId) {
-            await tx.insert(integrationVersions).values({
+            await tx.insert(integrationInstallations).values({
               integrationId: integration.id,
               versionId: headVersionId,
               status: "queued",
@@ -583,12 +542,15 @@ export const integrationsRouter = createTRPCRouter({
       // Trigger installation if branchId was provided
       if (input.branchId) {
         try {
-          await triggerInstallation({
-            projectId: input.projectId,
-            branchId: input.branchId,
-            triggerWorkflow: input.triggerWorkflow ?? false,
-            headers: ctx.headers,
-          });
+          await callAgentProxy(
+            "/integrations/install",
+            {
+              projectId: input.projectId,
+              branchId: input.branchId,
+              triggerWorkflow: input.triggerWorkflow ?? false,
+            },
+            ctx.headers,
+          );
 
           console.log(
             `[integrations.createBatch:${input.projectId}] Installation triggered successfully`,

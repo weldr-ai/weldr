@@ -12,29 +12,31 @@ export function CommitTypeBadge({
     switch (type.toLowerCase()) {
       case "feat":
       case "feature":
-        return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400";
+        return "bg-emerald-500/10 text-emerald-500";
       case "fix":
-        return "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400";
+        return "bg-red-500/10 text-red-500";
       case "docs":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400";
+        return "bg-blue-500/10 text-blue-500";
       case "style":
-        return "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400";
+        return "bg-purple-500/10 text-purple-500";
       case "refactor":
-        return "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/20 dark:text-cyan-400";
+        return "bg-cyan-500/10 text-cyan-500";
       case "test":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400";
+        return "bg-yellow-500/10 text-yellow-500";
       case "chore":
-        return "bg-accent text-accent-foreground";
+        return "bg-gray-500/10 text-gray-500";
       case "perf":
-        return "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400";
+        return "bg-orange-500/10 text-orange-500";
       case "ci":
-        return "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-400";
+        return "bg-indigo-500/10 text-indigo-500";
       case "build":
-        return "bg-pink-100 text-pink-800 dark:bg-pink-900/20 dark:text-pink-400";
+        return "bg-pink-500/10 text-pink-500";
       case "revert":
-        return "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400";
+        return "bg-orange-500/10 text-orange-500";
+      case "pending":
+        return "bg-yellow-500/10 text-yellow-500";
       default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400";
+        return "bg-gray-500/10 text-gray-500";
     }
   };
 
@@ -62,6 +64,8 @@ export function CommitTypeBadge({
         return "Build";
       case "revert":
         return "Revert";
+      case "pending":
+        return "Pending";
       default:
         return type.charAt(0).toUpperCase() + type.slice(1);
     }
@@ -69,7 +73,7 @@ export function CommitTypeBadge({
 
   return (
     <span
-      className={`inline-flex items-center rounded-md px-2 py-1 font-medium text-xs ${getTypeStyles(type)} ${className}`}
+      className={`inline-flex items-center rounded-md px-1.5 py-0.5 font-medium text-[10px] ${getTypeStyles(type)} ${className}`}
     >
       {getTypeLabel(type)}
     </span>

@@ -1,13 +1,14 @@
 import { createRoute, z } from "@hono/zod-openapi";
 import type { UserContent } from "ai";
 
-import { auth } from "@weldr/auth";
 import { and, db, eq } from "@weldr/db";
 import { branches, projects } from "@weldr/db/schema";
+import { getBranchDir } from "@weldr/shared/state";
 
 import { initVersion } from "@/ai/utils/init-version";
 import { insertMessages } from "@/ai/utils/insert-messages";
 import { getInstalledCategories } from "@/integrations/utils/get-installed-categories";
+import { auth } from "@/lib/auth";
 import { Git } from "@/lib/git";
 import { createRouter } from "@/lib/utils";
 import { workflow } from "@/workflow";
@@ -125,8 +126,10 @@ router.openapi(route, async (c) => {
   let activeVersion =
     branch.headVersion?.status !== "completed" ? branch.headVersion : null;
 
-  if (!(await Git.hasGitRepository())) {
-    await Git.initRepository();
+  const branchDir = getBranchDir(projectId, branchId);
+
+  if (!(await Git.hasGitRepository(branchDir))) {
+    await Git.initRepository(projectId, branchId, branchDir);
   }
 
   if (!activeVersion) {

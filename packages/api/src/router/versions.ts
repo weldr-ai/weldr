@@ -1,8 +1,18 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import { and, desc, eq } from "@weldr/db";
-import { branches, chats, versions } from "@weldr/db/schema";
+import { and, db, desc, eq } from "@weldr/db";
+import {
+  branches,
+  chatMessages,
+  chats,
+  integrationInstallations,
+  projects,
+  tasks,
+  versionDeclarations,
+  versions,
+} from "@weldr/db/schema";
+import { isLocalMode } from "@weldr/shared/state";
 import { Tigris } from "@weldr/shared/tigris";
 import type {
   AssistantMessage,
@@ -11,6 +21,7 @@ import type {
 } from "@weldr/shared/types";
 
 import { protectedProcedure } from "../init";
+import { callAgentProxy } from "../utils";
 
 export const versionRouter = {
   create: protectedProcedure
@@ -33,6 +44,7 @@ export const versionRouter = {
 
       let branchId: string | undefined = input.branchId;
       let headVersionNumber: number | undefined;
+      let headVersionSequenceNumber: number | undefined;
 
       if (!branchId) {
         const branch = await ctx.db.query.branches.findFirst({
@@ -44,6 +56,7 @@ export const versionRouter = {
             headVersion: {
               columns: {
                 number: true,
+                sequenceNumber: true,
               },
             },
           },
@@ -58,12 +71,38 @@ export const versionRouter = {
 
         branchId = branch.id;
         headVersionNumber = branch.headVersion?.number;
+        headVersionSequenceNumber = branch.headVersion?.sequenceNumber;
+      } else {
+        const branch = await ctx.db.query.branches.findFirst({
+          where: eq(branches.id, branchId),
+          with: {
+            headVersion: {
+              columns: {
+                number: true,
+                sequenceNumber: true,
+              },
+            },
+          },
+        });
+
+        if (!branch) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Branch not found",
+          });
+        }
+
+        headVersionNumber = branch.headVersion?.number;
+        headVersionSequenceNumber = branch.headVersion?.sequenceNumber;
       }
 
       const version = await ctx.db.insert(versions).values({
         projectId: input.projectId,
         userId: ctx.session.user.id,
         number: headVersionNumber ? headVersionNumber + 1 : 1,
+        sequenceNumber: headVersionSequenceNumber
+          ? headVersionSequenceNumber + 1
+          : 1,
         chatId: chat.id,
         branchId,
       });
@@ -256,5 +295,186 @@ export const versionRouter = {
       });
 
       return versionsList;
+    }),
+  revert: protectedProcedure
+    .input(z.object({ projectId: z.string(), versionId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const version = await ctx.db.query.versions.findFirst({
+        where: and(
+          eq(versions.id, input.versionId),
+          eq(projects.id, input.projectId),
+          eq(versions.userId, ctx.session.user.id),
+        ),
+        with: {
+          branch: true,
+          declarations: true,
+          integrationInstallations: true,
+          tasks: true,
+        },
+      });
+
+      if (!version) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Version not found",
+        });
+      }
+
+      // In local mode, require commitHash for git revert
+      // In cloud mode, require bucketSnapshotVersion for Tigris snapshot revert
+      if (isLocalMode()) {
+        if (!version.commitHash) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message:
+              "Version does not have a commit hash. Cannot revert in local mode without a commit hash.",
+          });
+        }
+      } else {
+        if (!version.bucketSnapshotVersion) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Version does not have a snapshot",
+          });
+        }
+      }
+
+      // In cloud mode, revert Tigris snapshot first
+      let newSnapshotVersion: string | undefined;
+      if (!isLocalMode()) {
+        // We already checked that bucketSnapshotVersion exists above
+        if (!version.bucketSnapshotVersion) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Version does not have a snapshot",
+          });
+        }
+        newSnapshotVersion = await Tigris.bucket.snapshot.revert(
+          `project-${input.projectId}-branch-${version.branch.id}`,
+          version.bucketSnapshotVersion,
+        );
+      }
+
+      const revertedVersion = await db.transaction(async (tx) => {
+        const [revertedVersionChat] = await tx
+          .insert(chats)
+          .values({
+            userId: ctx.session.user.id,
+            projectId: input.projectId,
+          })
+          .returning();
+
+        if (!revertedVersionChat) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Could not create version chat",
+          });
+        }
+
+        await tx.insert(chatMessages).values({
+          role: "assistant",
+          content: [
+            {
+              type: "text",
+              text: `Reverted from #${version.sequenceNumber} ${version.message}`,
+            },
+          ],
+          chatId: revertedVersionChat.id,
+        });
+
+        const [revertedVersion] = await tx
+          .insert(versions)
+          .values({
+            branchId: version.branch.id,
+            chatId: revertedVersionChat.id,
+            number: version.number + 1,
+            sequenceNumber: version.sequenceNumber + 1,
+            projectId: input.projectId,
+            userId: ctx.session.user.id,
+            // Only set bucketSnapshotVersion in cloud mode
+            bucketSnapshotVersion: newSnapshotVersion,
+            kind: "revert",
+            revertedVersionId: version.id,
+            message: `revert: revert to #${version.sequenceNumber} ${version.message}`,
+            description: `Reverted from #${version.sequenceNumber} ${version.message}`,
+            status: "completed",
+            publishedAt: new Date(),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            parentVersionId: version.branch.headVersionId,
+          })
+          .returning();
+
+        if (!revertedVersion) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Could not create version",
+          });
+        }
+
+        if (version.declarations.length > 0) {
+          await tx.insert(versionDeclarations).values(
+            version.declarations.map((declaration) => ({
+              versionId: revertedVersion.id,
+              declarationId: declaration.declarationId,
+            })),
+          );
+        }
+
+        if (version.integrationInstallations.length > 0) {
+          await tx.insert(integrationInstallations).values(
+            version.integrationInstallations.map((installation) => ({
+              versionId: revertedVersion.id,
+              integrationId: installation.integrationId,
+            })),
+          );
+        }
+
+        if (version.tasks.length > 0) {
+          await tx.insert(tasks).values(
+            version.tasks.map((task) => ({
+              versionId: revertedVersion.id,
+              status: task.status,
+              data: task.data,
+            })),
+          );
+        }
+
+        await tx
+          .update(branches)
+          .set({
+            headVersionId: revertedVersion.id,
+          })
+          .where(eq(branches.id, version.branch.id));
+
+        return revertedVersion;
+      });
+
+      try {
+        const { commitHash } = await callAgentProxy<{ commitHash: string }>(
+          "/revert",
+          {
+            projectId: input.projectId,
+            versionId: input.versionId,
+            branchId: version.branch.id,
+          },
+          ctx.headers,
+        );
+
+        // Update the reverted version with the commit hash
+        if (commitHash) {
+          await db
+            .update(versions)
+            .set({ commitHash })
+            .where(eq(versions.id, revertedVersion.id));
+
+          revertedVersion.commitHash = commitHash;
+        }
+      } catch (error) {
+        // Log error but don't fail the entire revert since the version is already created
+        console.error("Failed to perform git revert:", error);
+      }
+
+      return revertedVersion;
     }),
 };

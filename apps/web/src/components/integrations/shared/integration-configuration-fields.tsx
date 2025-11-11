@@ -31,7 +31,6 @@ export function IntegrationConfigurationFields({
   name,
   onNameChange,
   showNameField = false,
-  projectId,
 }: IntegrationConfigurationProps) {
   const [envVarPopoverStates, setEnvVarPopoverStates] = useState<
     Record<string, boolean>
@@ -133,7 +132,7 @@ export function IntegrationConfigurationFields({
                         </CommandGroup>
                       </CommandList>
                     </Command>
-                    <CreateEnvironmentVariableDialog projectId={projectId}>
+                    <CreateEnvironmentVariableDialog>
                       <Button
                         variant="outline"
                         size="sm"

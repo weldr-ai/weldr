@@ -9,12 +9,17 @@ import {
   ListPoliciesCommand,
 } from "@aws-sdk/client-iam";
 import {
-  CreateBucketCommand,
-  DeleteBucketCommand,
-  GetObjectCommand,
-  S3Client,
-} from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+  type CreateBucketOptions,
+  type CreateBucketResponse,
+  createBucket as tigrisCreateBucket,
+  createBucketSnapshot as tigrisCreateBucketSnapshot,
+  get as tigrisGet,
+  getPresignedUrl as tigrisGetPresignedUrl,
+  list as tigrisList,
+  put as tigrisPut,
+  remove as tigrisRemove,
+  removeBucket as tigrisRemoveBucket,
+} from "@tigrisdata/storage";
 
 import { Logger } from "./logger";
 
@@ -22,16 +27,6 @@ interface Credentials {
   accessKeyId: string;
   secretAccessKey: string;
 }
-
-const s3Client = new S3Client({
-  region: "auto",
-  endpoint: process.env.TIGRIS_ENDPOINT_URL ?? "https://t3.storage.dev",
-  forcePathStyle: false,
-  credentials: {
-    accessKeyId: process.env.TIGRIS_ACCESS_KEY_ID ?? "",
-    secretAccessKey: process.env.TIGRIS_SECRET_ACCESS_KEY ?? "",
-  },
-});
 
 const iamClient = new IAMClient({
   region: "auto",
@@ -42,17 +37,31 @@ const iamClient = new IAMClient({
   },
 });
 
-async function createBucket(bucketName: string): Promise<void> {
+const tigrisConfig = {
+  accessKeyId: process.env.TIGRIS_ACCESS_KEY_ID ?? "",
+  secretAccessKey: process.env.TIGRIS_SECRET_ACCESS_KEY ?? "",
+};
+
+async function createBucket(
+  bucketName: string,
+  options?: CreateBucketOptions,
+): Promise<CreateBucketResponse> {
   try {
-    const response = await s3Client.send(
-      new CreateBucketCommand({
-        Bucket: bucketName,
-      }),
-    );
+    const response = await tigrisCreateBucket(bucketName, {
+      ...options,
+      config: tigrisConfig,
+    });
+
+    if (response.error) {
+      throw response.error;
+    }
+
     Logger.info("Create bucket response", {
       bucketName,
-      response,
+      response: response.data,
     });
+
+    return response.data;
   } catch (error) {
     Logger.error("Create bucket error", {
       bucketName,
@@ -64,22 +73,24 @@ async function createBucket(bucketName: string): Promise<void> {
 
 async function deleteBucket(bucketName: string): Promise<void> {
   try {
-    const response = await s3Client.send(
-      new DeleteBucketCommand({
-        Bucket: bucketName,
-      }),
-    );
+    const response = await tigrisRemoveBucket(bucketName, {
+      config: tigrisConfig,
+    });
+
+    if (response.error) {
+      // Check if it's a 404 error (bucket not found)
+      const errorMessage = response.error.message || "";
+      if (errorMessage.includes("404") || errorMessage.includes("not found")) {
+        return;
+      }
+      throw response.error;
+    }
+
     Logger.info("Delete bucket response", {
       bucketName,
-      response,
+      response: response.data,
     });
   } catch (error) {
-    if (
-      (error as { $metadata?: { httpStatusCode?: number } })?.$metadata
-        ?.httpStatusCode === 404
-    ) {
-      return;
-    }
     Logger.error("Delete bucket error", {
       bucketName,
       error,
@@ -88,21 +99,21 @@ async function deleteBucket(bucketName: string): Promise<void> {
   }
 }
 
-function createBucketPolicyDocument(bucketName: string): string {
+function createProjectPolicyDocument(projectId: string): string {
   const policy = {
     Version: "2012-10-17",
     Statement: [
       {
-        Sid: "ListObjectsInBucket",
+        Sid: "ListObjectsInProjectBuckets",
         Effect: "Allow",
         Action: ["s3:ListBucket"],
-        Resource: [`arn:aws:s3:::${bucketName}`],
+        Resource: [`arn:aws:s3:::project-${projectId}-*`],
       },
       {
-        Sid: "ManageAllObjectsInBucketWildcard",
+        Sid: "ManageAllObjectsInProjectBuckets",
         Effect: "Allow",
         Action: ["s3:*"],
-        Resource: [`arn:aws:s3:::${bucketName}/*`],
+        Resource: [`arn:aws:s3:::project-${projectId}-*/*`],
       },
     ],
   };
@@ -195,18 +206,18 @@ async function deleteAccessKey(bucketName: string): Promise<Error | undefined> {
   }
 }
 
-async function createPolicy(bucketName: string): Promise<string> {
+async function createProjectPolicy(projectId: string): Promise<string> {
   try {
-    const policyName = `${bucketName}-policy`;
-    const policyDocument = createBucketPolicyDocument(bucketName);
+    const policyName = `project-${projectId}-policy`;
+    const policyDocument = createProjectPolicyDocument(projectId);
     const policyResponse = await iamClient.send(
       new CreatePolicyCommand({
         PolicyName: policyName,
         PolicyDocument: policyDocument,
       }),
     );
-    Logger.info("Create credentials policy response", {
-      bucketName,
+    Logger.info("Create project policy response", {
+      projectId,
       policyResponse,
     });
 
@@ -218,8 +229,8 @@ async function createPolicy(bucketName: string): Promise<string> {
 
     return policyResponse.Policy.Arn;
   } catch (error) {
-    Logger.error("Create policy error", {
-      bucketName,
+    Logger.error("Create project policy error", {
+      projectId,
       error,
     });
     throw error;
@@ -251,11 +262,11 @@ async function attachPolicyToUser(
   }
 }
 
-async function findPolicyByName(
-  bucketName: string,
+async function findProjectPolicyByName(
+  projectId: string,
 ): Promise<string | undefined> {
   try {
-    const policyName = `${bucketName}-policy`;
+    const policyName = `project-${projectId}-policy`;
     const listPoliciesResponse = await iamClient.send(
       new ListPoliciesCommand({
         Scope: "Local",
@@ -268,23 +279,25 @@ async function findPolicyByName(
     );
     return policy?.Arn;
   } catch (error) {
-    Logger.error("Failed to find policy by name", {
-      bucketName,
+    Logger.error("Failed to find project policy by name", {
+      projectId,
       error,
     });
     return undefined;
   }
 }
 
-async function deletePolicy(bucketName: string): Promise<Error | undefined> {
+async function deleteProjectPolicy(
+  projectId: string,
+): Promise<Error | undefined> {
   try {
-    const policyName = `${bucketName}-policy`;
-    const policyArn = await findPolicyByName(bucketName);
+    const policyName = `project-${projectId}-policy`;
+    const policyArn = await findProjectPolicyByName(projectId);
 
     if (!policyArn) {
-      Logger.info("Policy not found", {
+      Logger.info("Project policy not found", {
         policyName,
-        bucketName,
+        projectId,
       });
       return undefined;
     }
@@ -294,69 +307,86 @@ async function deletePolicy(bucketName: string): Promise<Error | undefined> {
         PolicyArn: policyArn,
       }),
     );
-    Logger.info("Delete policy response", {
-      bucketName,
+    Logger.info("Delete project policy response", {
+      projectId,
       response,
     });
     return undefined;
   } catch (error) {
-    Logger.error("Delete policy error", {
-      bucketName,
+    Logger.error("Delete project policy error", {
+      projectId,
       error,
     });
     return new Error(`Failed to delete policy: ${(error as Error).message}`);
   }
 }
 
-async function createCredentials(bucketName: string): Promise<Credentials> {
+async function createCredentials(projectId: string): Promise<Credentials> {
   try {
-    const accessKey = await createAccessKey(bucketName);
+    const userName = `project-${projectId}`;
+    const accessKey = await createAccessKey(userName);
 
-    const policyArn = await createPolicy(bucketName);
+    const policyArn = await createProjectPolicy(projectId);
 
     await attachPolicyToUser(accessKey.accessKeyId, policyArn);
+
+    Logger.info("Project credentials created", {
+      projectId,
+      accessKeyId: accessKey.accessKeyId,
+    });
 
     return {
       accessKeyId: accessKey.accessKeyId,
       secretAccessKey: accessKey.secretAccessKey,
     };
   } catch (error) {
-    Logger.error("Create credentials error", {
-      bucketName,
+    Logger.error("Create project credentials error", {
+      projectId,
       error,
     });
     throw error;
   }
 }
 
-async function createTigrisBucket(bucketName: string): Promise<Credentials> {
-  try {
-    await createBucket(bucketName);
-    try {
-      return await createCredentials(bucketName);
-    } catch (error) {
-      Logger.error("Error creating credentials, cleaning up bucket", {
-        bucketName,
-        error,
-      });
-      await deleteBucket(bucketName);
-      throw error;
-    }
-  } catch (error) {
-    Logger.error("Create Tigris bucket error", {
-      bucketName,
+async function deleteCredentials(
+  projectId: string,
+): Promise<Error | undefined> {
+  const userName = `project-${projectId}`;
+  const errors = await Promise.all([
+    deleteAccessKey(userName),
+    deleteProjectPolicy(projectId),
+  ]);
+
+  const error = errors.find((e) => e !== undefined);
+  if (error) {
+    Logger.error("Failed to delete project credentials", {
+      projectId,
       error,
     });
-    throw new Error("Failed to set up Tigris bucket");
+    return error;
   }
+
+  Logger.info("Project credentials deleted", {
+    projectId,
+  });
+  return undefined;
 }
 
-async function deleteTigrisBucket(bucketName: string): Promise<void> {
-  await Promise.all([
-    deleteAccessKey(bucketName),
-    deleteBucket(bucketName),
-    deletePolicy(bucketName),
-  ]);
+async function forkBucket(
+  sourceBucket: string,
+  forkBucket: string,
+  snapshotVersion?: string,
+): Promise<void> {
+  const result = await tigrisCreateBucket(forkBucket, {
+    sourceBucketName: sourceBucket,
+    enableSnapshot: true,
+    ...(snapshotVersion && { snapshotVersion }),
+    config: tigrisConfig,
+  });
+
+  if (result.error) {
+    throw new Error(`Failed to fork bucket: ${result.error}`);
+  }
 }
 
 async function getObjectSignedUrl(
@@ -364,21 +394,262 @@ async function getObjectSignedUrl(
   objectKey: string,
   expiresIn = 3600,
 ): Promise<string> {
-  const url = await getSignedUrl(
-    s3Client,
-    new GetObjectCommand({
-      Bucket: bucketName,
-      Key: objectKey,
-    }),
-    { expiresIn },
-  );
-  return url;
+  const response = await tigrisGetPresignedUrl(objectKey, {
+    operation: "get",
+    expiresIn,
+    config: {
+      ...tigrisConfig,
+      bucket: bucketName,
+    },
+  });
+
+  if (response.error) {
+    Logger.error("Get presigned URL error", {
+      bucketName,
+      objectKey,
+      error: response.error,
+    });
+    throw response.error;
+  }
+
+  return response.data?.url ?? "";
+}
+
+async function createSnapshot(
+  bucketName: string,
+  snapshotName: string,
+): Promise<string> {
+  try {
+    const response = await tigrisCreateBucketSnapshot(bucketName, {
+      name: snapshotName,
+      config: tigrisConfig,
+    });
+
+    if (response.error) {
+      Logger.error("Create snapshot error", {
+        bucketName,
+        snapshotName,
+        error: response.error,
+      });
+      throw response.error;
+    }
+
+    Logger.info("Snapshot created", {
+      bucketName,
+      snapshotName,
+      version: response.data.snapshotVersion,
+    });
+
+    return response.data.snapshotVersion;
+  } catch (error) {
+    Logger.error("Create snapshot error", {
+      bucketName,
+      snapshotName,
+      error,
+    });
+    throw error;
+  }
+}
+
+async function revertToSnapshot(
+  bucketName: string,
+  snapshotVersion: string,
+): Promise<string> {
+  const tempBucketName = `${bucketName}-temp-${Date.now()}`;
+
+  try {
+    Logger.info("Creating temporary bucket from snapshot", {
+      bucketName,
+      tempBucketName,
+      snapshotVersion,
+    });
+
+    const forkResult = await tigrisCreateBucket(tempBucketName, {
+      sourceBucketName: bucketName,
+      sourceBucketSnapshot: snapshotVersion,
+      enableSnapshot: false,
+      config: tigrisConfig,
+    });
+
+    if (forkResult.error) {
+      throw forkResult.error;
+    }
+
+    Logger.info("Listing current objects in bucket", { bucketName });
+
+    let hasMore = true;
+    let paginationToken: string | undefined;
+
+    while (hasMore) {
+      const listResult = await tigrisList({
+        config: {
+          ...tigrisConfig,
+          bucket: bucketName,
+        },
+        ...(paginationToken && { paginationToken }),
+      });
+
+      if (listResult.error) {
+        throw listResult.error;
+      }
+
+      if (listResult.data?.items && listResult.data.items.length > 0) {
+        Logger.info("Deleting current objects", {
+          bucketName,
+          count: listResult.data.items.length,
+        });
+
+        await Promise.all(
+          listResult.data.items.map(async (item) => {
+            const removeResult = await tigrisRemove(item.name, {
+              config: {
+                ...tigrisConfig,
+                bucket: bucketName,
+              },
+            });
+
+            if (removeResult?.error) {
+              Logger.error("Failed to delete object", {
+                bucketName,
+                path: item.name,
+                error: removeResult.error,
+              });
+            }
+          }),
+        );
+      }
+
+      hasMore = listResult.data?.hasMore ?? false;
+      paginationToken = listResult.data?.paginationToken;
+    }
+
+    Logger.info("Listing objects from snapshot", { tempBucketName });
+
+    hasMore = true;
+    paginationToken = undefined;
+
+    while (hasMore) {
+      const listResult = await tigrisList({
+        config: {
+          ...tigrisConfig,
+          bucket: tempBucketName,
+        },
+        ...(paginationToken && { paginationToken }),
+      });
+
+      if (listResult.error) {
+        throw listResult.error;
+      }
+
+      if (listResult.data?.items && listResult.data.items.length > 0) {
+        Logger.info("Copying objects from snapshot", {
+          tempBucketName,
+          bucketName,
+          count: listResult.data.items.length,
+        });
+
+        await Promise.all(
+          listResult.data.items.map(async (item) => {
+            const getResult = await tigrisGet(item.name, "stream", {
+              config: {
+                ...tigrisConfig,
+                bucket: tempBucketName,
+              },
+            });
+
+            if (getResult.error) {
+              Logger.error("Failed to get object from temp bucket", {
+                tempBucketName,
+                path: item.name,
+                error: getResult.error,
+              });
+              return;
+            }
+
+            const putResult = await tigrisPut(item.name, getResult.data, {
+              config: {
+                ...tigrisConfig,
+                bucket: bucketName,
+              },
+              allowOverwrite: true,
+            });
+
+            if (putResult.error) {
+              Logger.error("Failed to put object to original bucket", {
+                bucketName,
+                path: item.name,
+                error: putResult.error,
+              });
+            }
+          }),
+        );
+      }
+
+      hasMore = listResult.data?.hasMore ?? false;
+      paginationToken = listResult.data?.paginationToken;
+    }
+
+    Logger.info("Deleting temporary bucket", { tempBucketName });
+
+    const deleteResult = await tigrisRemoveBucket(tempBucketName, {
+      force: true,
+      config: tigrisConfig,
+    });
+
+    if (deleteResult.error) {
+      Logger.warn("Failed to delete temporary bucket", {
+        tempBucketName,
+        error: deleteResult.error,
+      });
+    }
+
+    Logger.info("Successfully reverted bucket to snapshot", {
+      bucketName,
+      snapshotVersion,
+    });
+
+    const newSnapshotVersion = await createSnapshot(
+      bucketName,
+      `${snapshotVersion}-reverted`,
+    );
+
+    return newSnapshotVersion;
+  } catch (error) {
+    Logger.error("Revert to snapshot error", {
+      bucketName,
+      snapshotVersion,
+      error,
+    });
+
+    try {
+      await tigrisRemoveBucket(tempBucketName, {
+        force: true,
+        config: tigrisConfig,
+      });
+    } catch (cleanupError) {
+      Logger.warn("Failed to cleanup temporary bucket after error", {
+        tempBucketName,
+        cleanupError,
+      });
+    }
+
+    throw error;
+  }
 }
 
 export const Tigris = {
   bucket: {
-    create: createTigrisBucket,
-    delete: deleteTigrisBucket,
+    create: createBucket,
+    delete: deleteBucket,
+    fork: forkBucket,
+    snapshot: {
+      create: createSnapshot,
+      revert: revertToSnapshot,
+    },
+  },
+  credentials: {
+    create: createCredentials,
+    delete: deleteCredentials,
   },
   object: {
     getSignedUrl: getObjectSignedUrl,

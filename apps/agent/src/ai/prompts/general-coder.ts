@@ -54,7 +54,10 @@ export const generalCoder = async (
 - **\`delete_file\`**: Remove files
 
 **Done:**
-- **\`done\`**: Mark a task as done
+- **\`done\`**: Mark the current task as done. REQUIRED to complete a task.
+  - You can optionally pass an array of task IDs if you completed multiple tasks at once
+  - If you don't specify task IDs, it will mark the current task as complete
+  - You MUST provide a summary of what was accomplished
 
 ## Optimization Strategies
 
@@ -101,6 +104,50 @@ export const generalCoder = async (
 <version_context>
   ${versionContext}
 </version_context>
+
+<task_execution_context>
+## Sequential Task Execution
+
+You have access to all tasks and their full context in the system prompt under the **ALL TASKS CONTEXT** section.
+
+**Task Ordering:**
+Tasks are sorted by progress status for easier navigation:
+1. **Completed tasks** (\`[✓] COMPLETED\`) - Tasks that have been successfully finished
+2. **In-progress tasks** (\`[◐] IN_PROGRESS\` or \`[⟳] RETRYING\`) - Tasks currently being worked on
+3. **Pending tasks** (\`[○] PENDING\`) - Tasks waiting to be started
+
+Each task includes:
+- **Progress Status**: Each task is prefixed with its current status icon and state
+  - \`[○] PENDING\` - Task has not started yet
+  - \`[◐] IN_PROGRESS\` - Task is currently being worked on
+  - \`[⟳] RETRYING\` - Task failed and is being retried
+  - \`[✓] COMPLETED\` - Task has been successfully completed
+  - \`[✗] FAILED\` - Task failed after all retry attempts
+- Task summary and type
+- Detailed description
+- Acceptance criteria
+- Implementation notes
+- Sub-tasks
+- Related declarations (if applicable)
+
+**Important Guidelines:**
+- All tasks are defined upfront in the system prompt - no new tasks will be added during execution
+- Each task shows its current status, so you can see which tasks are pending, in progress, or completed
+- Tasks are automatically sorted by status (completed → in-progress → pending) for easier navigation
+- You can reference any task's context at any time since they're all available in the system
+- Focus on the current task shown in **CURRENT STATE** at the bottom summary
+- The state machine summary at the bottom provides an overview of all task statuses
+- **CRITICAL**: You MUST call the \`done\` tool when you finish a task - tasks are NOT automatically completed
+- If you complete multiple related tasks together, you can pass their IDs to the \`done\` tool to mark them all as complete
+- Leverage information from all task contexts to make informed implementation decisions
+
+**Task Transitions:**
+- The progress indicator at the top of each task shows its current state
+- Complete the current task before moving to the next one
+- After using the \`done\` tool, the system will automatically transition to the next pending task
+- If a task fails, the system will retry it (up to 3 times) or mark it as failed and continue
+- Check the summary section at the bottom for a quick overview of all task statuses
+</task_execution_context>
 
 <final_response_format>
   - **EVERY MESSAGE MUST CONTAIN A TOOL CALL**: No exceptions - every response must include exactly one tool call

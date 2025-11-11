@@ -1,5 +1,6 @@
 import { Logger } from "@weldr/shared/logger";
 
+import { ensureBranchDir } from "@/lib/branch-state";
 import { stream } from "@/lib/stream-utils";
 import type { WorkflowContext } from "./context";
 
@@ -23,10 +24,9 @@ export type WorkflowConfig = {
   retryConfig: RetryConfig;
 };
 
-type StatusStepMapping = {
-  [key in "planning" | "coding" | "deploying"]: {
-    step: Step;
-  };
+type WorkflowStep = {
+  step: Step;
+  condition: (context: WorkflowContext) => boolean | Promise<boolean>;
 };
 
 // --- Public API ---
@@ -52,7 +52,7 @@ export function createWorkflow(
   },
 ) {
   const { retryConfig } = config;
-  const stepMapping: StatusStepMapping = {} as StatusStepMapping;
+  const workflowSteps: WorkflowStep[] = [];
 
   const api = {
     status: "idle" as "idle" | "executing" | "suspended",
@@ -63,17 +63,14 @@ export function createWorkflow(
       }
       return false;
     },
-    onStatus<T extends "pending" | "planning" | "coding" | "deploying">(
-      status: T | T[],
-      step: Step,
+    step(
+      stepToRegister: Step,
+      options?: {
+        condition?: (context: WorkflowContext) => boolean | Promise<boolean>;
+      },
     ) {
-      if (Array.isArray(status)) {
-        status.forEach((s) => {
-          stepMapping[s as keyof StatusStepMapping] = { step };
-        });
-      } else {
-        stepMapping[status as keyof StatusStepMapping] = { step };
-      }
+      const condition = options?.condition ?? (() => true);
+      workflowSteps.push({ step: stepToRegister, condition });
       return api;
     },
     async execute({ context }: { context: WorkflowContext }): Promise<void> {
@@ -102,27 +99,36 @@ export function createWorkflow(
       // Mark workflow as executing
       api.status = "executing";
 
-      // Stream status to the client
-      const currentStep =
-        stepMapping[branch.headVersion.status as keyof StatusStepMapping].step
-          .id;
+      // Ensure branch directory exists before executing any steps
+      logger.info("Ensuring branch directory exists", {
+        extra: { branchId: branch.id, projectId: project.id },
+      });
+
+      try {
+        const { branchDir, status } = await ensureBranchDir(
+          branch.id,
+          project.id,
+        );
+        logger.info(`Branch directory ${status}`, {
+          extra: { branchDir, status },
+        });
+      } catch (error) {
+        logger.error("Failed to ensure branch directory exists", {
+          extra: {
+            branchId: branch.id,
+            projectId: project.id,
+            error: error instanceof Error ? error.message : String(error),
+          },
+        });
+        throw new Error(
+          `Cannot execute workflow: failed to ensure branch directory exists`,
+        );
+      }
 
       await stream(branch.headVersion.chatId, {
         type: "status",
         status: "thinking",
       });
-
-      switch (currentStep) {
-        case "planning":
-        case "coding":
-        case "deploying": {
-          await stream(branch.headVersion.chatId, {
-            type: "status",
-            status: currentStep,
-          });
-          break;
-        }
-      }
 
       try {
         logger.info(`Current version status: ${branch.headVersion.status}`);
@@ -141,27 +147,27 @@ export function createWorkflow(
           return;
         }
 
-        // Find the step to execute based on current status
-        const stepConfig =
-          stepMapping[branch.headVersion.status as keyof StatusStepMapping];
-        if (!stepConfig) {
-          logger.warn(
-            `No step configured for status: ${branch.headVersion.status}`,
-          );
-          return;
+        // Execute all steps that meet their conditions
+        for (const workflowStep of workflowSteps) {
+          const shouldExecute = await workflowStep.condition(context);
+
+          if (shouldExecute) {
+            logger.info(`Executing step: ${workflowStep.step.id}`);
+
+            try {
+              await executeWithRetry({
+                step: workflowStep.step,
+                retryConfig,
+                context,
+              });
+            } catch (error) {
+              logger.error(`Step ${workflowStep.step.id} failed`, {
+                extra: { error },
+              });
+              throw error;
+            }
+          }
         }
-
-        const { step } = stepConfig;
-
-        logger.info(
-          `Executing step: ${step.id} for status: ${branch.headVersion.status}`,
-        );
-
-        await executeWithRetry({
-          step,
-          retryConfig,
-          context,
-        });
 
         await api.execute({ context });
       } catch (error) {

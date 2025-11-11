@@ -1,5 +1,5 @@
 import { and, db, eq } from "@weldr/db";
-import { integrationVersions } from "@weldr/db/schema";
+import { integrationInstallations } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
 import type {
   Integration,
@@ -24,21 +24,13 @@ export async function processIntegrationQueue(
 
   logger.info("Processing integration queue");
 
-  const queuedInstallations = await db.query.integrationVersions.findMany({
+  const queuedInstallations = await db.query.integrationInstallations.findMany({
     where: and(
-      eq(integrationVersions.versionId, versionId),
-      eq(integrationVersions.status, "queued"),
+      eq(integrationInstallations.versionId, versionId),
+      eq(integrationInstallations.status, "queued"),
     ),
     with: {
-      integration: {
-        with: {
-          environmentVariableMappings: {
-            with: {
-              environmentVariable: true,
-            },
-          },
-        },
-      },
+      integration: true,
     },
   });
 
@@ -47,16 +39,50 @@ export async function processIntegrationQueue(
     return;
   }
 
+  // Fetch environment variable mappings separately to avoid deep nesting
+  const integrationIds = queuedInstallations.map((i) => i.integration.id);
+  const envMappings =
+    integrationIds.length > 0
+      ? await db.query.integrationEnvironmentVariables.findMany({
+          where: (fields, { inArray }) =>
+            inArray(fields.integrationId, integrationIds),
+          with: {
+            environmentVariable: true,
+          },
+        })
+      : [];
+
+  // Map environment variables to integrations
+  const envMappingsByIntegration = new Map<string, typeof envMappings>();
+  for (const mapping of envMappings) {
+    const existing = envMappingsByIntegration.get(mapping.integrationId);
+    if (existing) {
+      existing.push(mapping);
+    } else {
+      envMappingsByIntegration.set(mapping.integrationId, [mapping]);
+    }
+  }
+
+  // Attach environment mappings to integrations
+  for (const installation of queuedInstallations) {
+    const mappings =
+      envMappingsByIntegration.get(installation.integration.id) || [];
+    Object.assign(installation.integration, {
+      environmentVariableMappings: mappings,
+    });
+  }
+
   // Get completed installations for this version
-  const completedInstallations = await db.query.integrationVersions.findMany({
-    where: and(
-      eq(integrationVersions.versionId, versionId),
-      eq(integrationVersions.status, "installed"),
-    ),
-    with: {
-      integration: true,
-    },
-  });
+  const completedInstallations =
+    await db.query.integrationInstallations.findMany({
+      where: and(
+        eq(integrationInstallations.versionId, versionId),
+        eq(integrationInstallations.status, "installed"),
+      ),
+      with: {
+        integration: true,
+      },
+    });
 
   const completedCategories = completedInstallations
     .map(
@@ -80,9 +106,9 @@ export async function processIntegrationQueue(
 
     if (missingDependencies.length > 0) {
       await db
-        .update(integrationVersions)
+        .update(integrationInstallations)
         .set({ status: "blocked" })
-        .where(eq(integrationVersions.id, installRecord.id));
+        .where(eq(integrationInstallations.id, installRecord.id));
 
       logger.info(
         `Blocked ${integration.key} - missing: ${missingDependencies.join(", ")}`,
@@ -106,29 +132,32 @@ export async function unblockIntegrations(
     return;
   }
 
-  const blockedInstallations = await db.query.integrationVersions.findMany({
-    where: and(
-      eq(integrationVersions.versionId, versionId),
-      eq(integrationVersions.status, "blocked"),
-    ),
-    with: {
-      integration: true,
+  const blockedInstallations = await db.query.integrationInstallations.findMany(
+    {
+      where: and(
+        eq(integrationInstallations.versionId, versionId),
+        eq(integrationInstallations.status, "blocked"),
+      ),
+      with: {
+        integration: true,
+      },
     },
-  });
+  );
 
   if (blockedInstallations.length === 0) {
     return;
   }
 
-  const completedInstallations = await db.query.integrationVersions.findMany({
-    where: and(
-      eq(integrationVersions.versionId, versionId),
-      eq(integrationVersions.status, "installed"),
-    ),
-    with: {
-      integration: true,
-    },
-  });
+  const completedInstallations =
+    await db.query.integrationInstallations.findMany({
+      where: and(
+        eq(integrationInstallations.versionId, versionId),
+        eq(integrationInstallations.status, "installed"),
+      ),
+      with: {
+        integration: true,
+      },
+    });
 
   const completedCategories = completedInstallations
     .map(
@@ -148,9 +177,9 @@ export async function unblockIntegrations(
 
     if (missingDependencies.length === 0) {
       await db
-        .update(integrationVersions)
+        .update(integrationInstallations)
         .set({ status: "queued" })
-        .where(eq(integrationVersions.id, installRecord.id));
+        .where(eq(integrationInstallations.id, installRecord.id));
 
       logger.info(`Unblocked ${integration.key} - dependencies now satisfied`);
     }
@@ -167,27 +196,49 @@ export async function getQueuedIntegrations(
     throw new Error("No head version found for branch");
   }
 
-  const queuedInstallations = await db.query.integrationVersions.findMany({
+  const queuedInstallations = await db.query.integrationInstallations.findMany({
     where: and(
-      eq(integrationVersions.versionId, versionId),
-      eq(integrationVersions.status, "queued"),
+      eq(integrationInstallations.versionId, versionId),
+      eq(integrationInstallations.status, "queued"),
     ),
     with: {
-      integration: {
-        with: {
-          environmentVariableMappings: {
-            with: {
-              environmentVariable: true,
-            },
-          },
-        },
-      },
+      integration: true,
     },
   });
 
-  const queuedIntegrations = queuedInstallations.map(
-    (iv) => iv.integration,
-  ) as Integration[];
+  // Fetch environment variable mappings separately to avoid deep nesting
+  const integrationIds = queuedInstallations.map((i) => i.integration.id);
+  const envMappings =
+    integrationIds.length > 0
+      ? await db.query.integrationEnvironmentVariables.findMany({
+          where: (fields, { inArray }) =>
+            inArray(fields.integrationId, integrationIds),
+          with: {
+            environmentVariable: true,
+          },
+        })
+      : [];
+
+  // Map environment variables to integrations
+  const envMappingsByIntegration = new Map<string, typeof envMappings>();
+  for (const mapping of envMappings) {
+    const existing = envMappingsByIntegration.get(mapping.integrationId);
+    if (existing) {
+      existing.push(mapping);
+    } else {
+      envMappingsByIntegration.set(mapping.integrationId, [mapping]);
+    }
+  }
+
+  // Attach environment mappings to integrations and extract them
+  const queuedIntegrations = queuedInstallations.map((installation) => {
+    const mappings =
+      envMappingsByIntegration.get(installation.integration.id) || [];
+    return {
+      ...installation.integration,
+      environmentVariableMappings: mappings,
+    } as Integration;
+  });
 
   const integrationKeys = queuedIntegrations.map((i) => i.key);
   const orderedKeys = integrationRegistry.getInstallationOrder(integrationKeys);
@@ -203,15 +254,15 @@ export async function updateIntegrationInstallationStatus(
   status: IntegrationInstallationStatus,
 ): Promise<void> {
   await db
-    .update(integrationVersions)
+    .update(integrationInstallations)
     .set({
       status,
       ...(status === "installed" ? { installedAt: new Date() } : {}),
     })
     .where(
       and(
-        eq(integrationVersions.versionId, versionId),
-        eq(integrationVersions.integrationId, integrationId),
+        eq(integrationInstallations.versionId, versionId),
+        eq(integrationInstallations.integrationId, integrationId),
       ),
     );
 }

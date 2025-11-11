@@ -49,3 +49,4 @@ yarn-error.log*
 
 # Local temp files
 .temp/
+tmp/

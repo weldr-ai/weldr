@@ -17,6 +17,7 @@ export const postgresqlIntegration = defineIntegration<"postgresql">({
       name: "DATABASE_URL",
       source: "user",
       isRequired: true,
+      target: ["server"],
     },
   ],
   options: {

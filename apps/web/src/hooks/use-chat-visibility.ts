@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export function useChatVisibility() {
-  const [isChatVisible, setIsChatVisible] = useState(false);
+  const [isChatVisible, setIsChatVisible] = useState(true);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
   const handleInputFocus = useCallback(() => {

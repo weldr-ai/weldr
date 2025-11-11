@@ -2,55 +2,71 @@ import { TRPCError } from "@trpc/server";
 import type { Edge } from "@xyflow/react";
 import { notFound, redirect } from "next/navigation";
 
+import { trackProjectActivity } from "@weldr/shared/state";
 import type { NodeType } from "@weldr/shared/types";
 
 import { ProjectView } from "@/components/projects/project-view";
 import { api } from "@/lib/trpc/server";
 import type { CanvasNode } from "@/types";
+import { getVersionDeclarations } from "./_utils/get-version-declarations";
 
 export default async function ProjectPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ projectId: string }>;
-  searchParams: Promise<{ versionId: string }>;
 }): Promise<JSX.Element | undefined> {
   try {
     const { projectId } = await params;
-    const { versionId } = await searchParams;
-    const project = await api.projects.byId({ id: projectId, versionId });
+    const project = await api.projects.byId({ id: projectId });
+    const branch = await api.branches.byIdOrMain({ projectId: project.id });
     const integrationTemplates = await api.integrationTemplates.list();
 
+    await trackProjectActivity(projectId, branch.id);
+
+    const headVersionDeclarations = getVersionDeclarations(branch.headVersion);
+
     const initialNodes: CanvasNode[] =
-      project.branch.headVersion?.declarations?.reduce<CanvasNode[]>(
-        (acc, e) => {
-          if (!e.declaration.metadata?.specs) return acc;
+      headVersionDeclarations?.reduce<CanvasNode[]>((acc, e) => {
+        if (!e.declaration.metadata?.specs) return acc;
 
-          acc.push({
-            id: e.declaration.nodeId ?? "",
-            type: e.declaration.metadata?.specs?.type as NodeType,
-            data: e.declaration,
-            position: e.declaration.node?.position ?? {
-              x: 0,
-              y: 0,
-            },
-          });
+        acc.push({
+          id: e.declaration.nodeId ?? "",
+          type: e.declaration.metadata?.specs?.type as NodeType,
+          data: e.declaration,
+          position: e.declaration.node?.position ?? {
+            x: 0,
+            y: 0,
+          },
+        });
 
-          return acc;
-        },
-        [],
-      ) ?? [];
+        return acc;
+      }, []) ?? [];
 
-    const initialEdges: Edge[] =
-      project.branch.headVersion?.edges?.map((edge) => ({
-        id: `${edge.dependencyId}-${edge.dependentId}`,
-        source: edge.dependencyId,
-        target: edge.dependentId,
-      })) ?? [];
+    const initialEdges: Edge[] = Array.from(
+      headVersionDeclarations
+        .flatMap((decl) => decl.edges)
+        .filter(
+          (edge) =>
+            edge.dependencyId !== undefined && edge.dependentId !== undefined,
+        )
+        .reduce((map, edge) => {
+          const id = `${edge.dependencyId}-${edge.dependentId}`;
+          if (!map.has(id)) {
+            map.set(id, {
+              id,
+              source: edge.dependencyId as string,
+              target: edge.dependentId as string,
+            });
+          }
+          return map;
+        }, new Map<string, Edge>())
+        .values(),
+    );
 
     return (
       <ProjectView
         project={project}
+        branch={branch}
         initialNodes={initialNodes}
         initialEdges={initialEdges}
         integrationTemplates={integrationTemplates}

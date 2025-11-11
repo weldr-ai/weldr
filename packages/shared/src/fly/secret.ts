@@ -38,7 +38,7 @@ export namespace Secret {
       `,
         variables: {
           input: {
-            appId: `app-${type}-${projectId}`,
+            appId: `project-${projectId}-${type}`,
             secrets,
             replaceAll: true,
           },
@@ -83,7 +83,7 @@ export namespace Secret {
       `,
           variables: {
             input: {
-              appId: `app-${type}-${projectId}`,
+              appId: `project-${projectId}-${type}`,
               keys: secretKeys,
             },
           },

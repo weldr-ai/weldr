@@ -2,25 +2,24 @@
 
 # common.sh - Common utility functions for scripts
 
-if [ "$NODE_ENV" = "development" ]; then
-    WORKSPACE_DIR="$(dirname "$0")/../.temp"
-else
-    WORKSPACE_DIR="/workspace"
-fi
-
-# Set data paths based on environment
-if [ "$NODE_ENV" = "development" ]; then
-    # In development, use absolute paths relative to script location
-    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    BOILERPLATES_DIR="$SCRIPT_DIR/../data/boilerplates"
-    DATA_DIR="$SCRIPT_DIR/../data"
-else
-    # In production, use absolute paths
-    BOILERPLATES_DIR="/.weldr/data/boilerplates"
-    DATA_DIR="/.weldr/data"
-fi
+WORKSPACE_DIR="/workspace"
 
 # Function to print errors to stderr
 print_error() {
     echo "[ERROR] $1" >&2
+}
+
+# Function to print info messages
+print_info() {
+    echo "[INFO] $1"
+}
+
+# Function to print success messages
+print_success() {
+    echo "[SUCCESS] $1"
+}
+
+# Function to print warning messages
+print_warning() {
+    echo "[WARNING] $1"
 }

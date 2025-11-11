@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useParams } from "next/navigation";
 
 import type { RouterOutputs } from "@weldr/api";
 import {
@@ -16,16 +17,15 @@ import { CreateIntegrationDialog } from "@/components/integrations/create-integr
 import { useTRPC } from "@/lib/trpc/react";
 
 export function IntegrationsSection({
-  projectId,
   integrationTemplates,
   integrations: initialIntegrations,
   environmentVariables,
 }: {
-  projectId: string;
   integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
   integrations: RouterOutputs["projects"]["byId"]["integrations"];
   environmentVariables: RouterOutputs["environmentVariables"]["list"];
 }) {
+  const { projectId } = useParams<{ projectId: string }>();
   const trpc = useTRPC();
 
   const { data: integrations } = useQuery(

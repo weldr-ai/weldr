@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 
@@ -8,11 +9,11 @@ import {
   secrets,
 } from "@weldr/db/schema";
 import { Logger } from "@weldr/shared/logger";
+import { getBranchDir } from "@weldr/shared/state";
 
 import type { IntegrationPackageSets } from "@/integrations/types";
 import { defineIntegration } from "@/integrations/utils/define-integration";
 import { runCommand } from "@/lib/commands";
-import { Git } from "@/lib/git";
 
 export const betterAuthIntegration = defineIntegration<"better-auth">({
   category: "authentication",
@@ -35,6 +36,7 @@ export const betterAuthIntegration = defineIntegration<"better-auth">({
       name: "BETTER_AUTH_SECRET",
       source: "system",
       isRequired: true,
+      target: ["server"],
     },
   ],
   isRecommended: true,
@@ -46,7 +48,7 @@ export const betterAuthIntegration = defineIntegration<"better-auth">({
       {
         target: "server",
         runtime: {
-          "better-auth": "^1.3.1",
+          "better-auth": "^1.3.34",
         },
         development: {},
       },
@@ -56,7 +58,7 @@ export const betterAuthIntegration = defineIntegration<"better-auth">({
       packages.push({
         target: "web",
         runtime: {
-          "better-auth": "^1.3.1",
+          "better-auth": "^1.3.34",
         },
         development: {},
       });
@@ -67,16 +69,14 @@ export const betterAuthIntegration = defineIntegration<"better-auth">({
 
   postInstall: async ({ context, integration }) => {
     const project = context.get("project");
-    const user = context.get("user");
     const branch = context.get("branch");
-
-    const workspaceDir = Git.getBranchWorkspaceDir(branch.id, branch.isMain);
+    const user = context.get("user");
+    const branchDir = getBranchDir(project.id, branch.id);
 
     try {
       // Store secret in database
       await db.transaction(async (tx) => {
-        // Generate secret
-        const BETTER_AUTH_SECRET = "SECRET";
+        const BETTER_AUTH_SECRET = randomBytes(32).toString("base64");
 
         const [secret] = await tx
           .insert(secrets)
@@ -112,7 +112,7 @@ export const betterAuthIntegration = defineIntegration<"better-auth">({
 
       // Check if schema/index.ts exists and is empty
       const schemaIndexPath = path.join(
-        workspaceDir,
+        branchDir,
         "apps/server/src/db/schema/index.ts",
       );
 
@@ -159,7 +159,7 @@ export const dummyTable = pgTable("dummy_table", {
           "--y",
         ],
         {
-          cwd: path.join(workspaceDir, "apps", "server"),
+          cwd: path.join(branchDir, "apps", "server"),
         },
       );
 

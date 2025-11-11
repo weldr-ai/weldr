@@ -1,24 +1,25 @@
 import { db } from "@weldr/db";
 
 export async function getInstalledCategories(versionId: string) {
-  const installedIntegrations = await db.query.integrationVersions.findMany({
-    where: (integrationVersions, { and, eq }) =>
-      and(
-        eq(integrationVersions.versionId, versionId),
-        eq(integrationVersions.status, "installed"),
-      ),
-    with: {
-      integration: {
-        with: {
-          integrationTemplate: {
-            with: {
-              category: true,
+  const installedIntegrations =
+    await db.query.integrationInstallations.findMany({
+      where: (integrationInstallations, { and, eq }) =>
+        and(
+          eq(integrationInstallations.versionId, versionId),
+          eq(integrationInstallations.status, "installed"),
+        ),
+      with: {
+        integration: {
+          with: {
+            integrationTemplate: {
+              with: {
+                category: true,
+              },
             },
           },
         },
       },
-    },
-  });
+    });
   return installedIntegrations.map(
     (iv) => iv.integration.integrationTemplate.category.key,
   );

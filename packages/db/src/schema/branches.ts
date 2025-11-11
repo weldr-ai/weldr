@@ -7,11 +7,13 @@ import {
   pgTable,
   text,
   timestamp,
+  unique,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 import { nanoid } from "@weldr/shared/nanoid";
 
+import { users } from "./auth";
 import { projects } from "./projects";
 import { versions } from "./versions";
 
@@ -19,6 +21,8 @@ export const branches = pgTable(
   "branches",
   {
     id: text("id").primaryKey().$defaultFn(nanoid),
+    name: text("name").notNull(),
+    description: text("description"),
     projectId: text("project_id")
       .references(() => projects.id, { onDelete: "cascade" })
       .notNull(),
@@ -44,12 +48,16 @@ export const branches = pgTable(
       .$type<"active" | "archived">()
       .notNull()
       .default("active"),
+    userId: text("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
       .$onUpdate(() => new Date()),
   },
   (t) => [
+    unique("branches_name_unique").on(t.projectId, t.name),
     index("branches_project_idx").on(t.projectId),
     index("branches_parent_fork_idx").on(
       t.parentBranchId,
@@ -95,13 +103,15 @@ export const branchesRelations = relations(branches, ({ one, many }) => ({
     relationName: "branch_parent",
   }),
   forkedFromVersion: one(versions, {
+    relationName: "branch_forked_from_version",
     fields: [branches.forkedFromVersionId],
     references: [versions.id],
   }),
   headVersion: one(versions, {
+    relationName: "branch_head_version",
     fields: [branches.headVersionId],
     references: [versions.id],
   }),
   children: many(branches, { relationName: "branch_parent" }),
-  versions: many(versions),
+  versions: many(versions, { relationName: "version_branch" }),
 }));

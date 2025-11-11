@@ -4,12 +4,12 @@ import { fileURLToPath } from "node:url";
 import Handlebars from "handlebars";
 
 import { Logger } from "@weldr/shared/logger";
+import { getBranchDir } from "@weldr/shared/state";
 import type { Integration } from "@weldr/shared/types";
 
 import { applyEdit } from "@/ai/utils/apply-edit";
 import type { FileItem } from "@/integrations/types";
 import { integrationRegistry } from "@/integrations/utils/registry";
-import { Git } from "@/lib/git";
 import type { WorkflowContext } from "@/workflow/context";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -22,19 +22,26 @@ export async function applyFiles({
   integration: Integration;
   context: WorkflowContext;
 }): Promise<void> {
+  const project = context.get("project");
   const branch = context.get("branch");
-  const workspaceDir = Git.getBranchWorkspaceDir(branch.id, branch.isMain);
+  const branchDir = getBranchDir(project.id, branch.id);
 
   const files = await generateFiles({
     integration,
     context,
+    branchDir,
   });
 
   const logger = Logger.get({ projectId: integration.projectId });
 
+  logger.info(
+    `Generated ${files.length} files for integration ${integration.key}`,
+  );
+
   for (const file of files) {
+    logger.info(`Processing file: ${file.sourcePath} -> ${file.targetPath}`);
     const targetDir = path.dirname(file.targetPath);
-    const fullTargetDir = path.resolve(workspaceDir, targetDir);
+    const fullTargetDir = path.resolve(branchDir, targetDir);
 
     try {
       await fs.mkdir(fullTargetDir, { recursive: true });
@@ -47,9 +54,9 @@ export async function applyFiles({
     try {
       switch (file.type) {
         case "copy": {
-          const fullTargetPath = path.resolve(workspaceDir, file.targetPath);
+          const fullTargetPath = path.resolve(branchDir, file.targetPath);
 
-          if (!fullTargetPath.startsWith(workspaceDir)) {
+          if (!fullTargetPath.startsWith(branchDir)) {
             throw new Error(`Invalid target path: path traversal detected`);
           }
 
@@ -68,9 +75,9 @@ export async function applyFiles({
           break;
         }
         case "llm_instruction": {
-          const fullTargetPath = path.resolve(workspaceDir, file.targetPath);
+          const fullTargetPath = path.resolve(branchDir, file.targetPath);
 
-          if (!fullTargetPath.startsWith(workspaceDir)) {
+          if (!fullTargetPath.startsWith(branchDir)) {
             throw new Error(`Invalid target path: path traversal detected`);
           }
 
@@ -100,9 +107,9 @@ export async function applyFiles({
           break;
         }
         case "handlebars": {
-          const fullTargetPath = path.resolve(workspaceDir, file.targetPath);
+          const fullTargetPath = path.resolve(branchDir, file.targetPath);
 
-          if (!fullTargetPath.startsWith(workspaceDir)) {
+          if (!fullTargetPath.startsWith(branchDir)) {
             throw new Error(`Invalid target path: path traversal detected`);
           }
 
@@ -142,21 +149,33 @@ export async function applyFiles({
 async function generateFiles({
   integration,
   context,
+  branchDir,
 }: {
   integration: Integration;
   context: WorkflowContext;
+  branchDir: string;
 }): Promise<FileItem[]> {
   const project = context.get("project");
-  const branch = context.get("branch");
-  const workspaceDir = Git.getBranchWorkspaceDir(branch.id, branch.isMain);
 
-  const hasFrontend = project.integrationCategories.has("frontend");
-  const hasBackend = project.integrationCategories.has("backend");
-  const hasNothing = !hasFrontend && !hasBackend;
+  const category = integrationRegistry.getIntegrationCategory(integration.key);
+
+  const hasAnyIntegration = project.integrationCategories.size > 0;
+
+  // Consider both what's installed AND the current integration's category
+  const hasFrontend =
+    project.integrationCategories.has("frontend") ||
+    category.key === "frontend";
+  const hasBackend =
+    project.integrationCategories.has("backend") || category.key === "backend";
 
   const logger = Logger.get({ projectId: integration.projectId });
 
-  const category = integrationRegistry.getIntegrationCategory(integration.key);
+  logger.info(
+    `Generating files for ${integration.key}: hasFrontend=${hasFrontend}, hasBackend=${hasBackend}, hasAnyIntegration=${hasAnyIntegration}`,
+  );
+  logger.info(
+    `Integration categories: ${Array.from(project.integrationCategories).join(", ")}, current category: ${category.key}`,
+  );
 
   let baseDataDir = path.join(
     path.resolve(__dirname, "../.."),
@@ -184,25 +203,32 @@ async function generateFiles({
 
   const files: FileItem[] = [];
 
-  // Add base files when there's absolutely nothing in the project yet
-  if (hasNothing) {
-    const baseFiles = await processBaseFiles(workspaceDir);
+  // ALWAYS copy base files first when no integrations have been installed yet
+  if (!hasAnyIntegration) {
+    logger.info("No existing integrations found, copying base files first");
+    const baseFiles = await processBaseFiles(branchDir);
     files.push(...baseFiles);
   }
 
-  if (hasBackend || hasNothing) {
+  if (hasBackend || !hasAnyIntegration) {
     const serverPath = path.join(baseDataDir, "server");
+    logger.info(
+      `Processing server files from ${serverPath} for ${integration.key}`,
+    );
     const serverFiles = await processDirectoryFiles(
       serverPath,
       "server",
-      workspaceDir,
+      branchDir,
+    );
+    logger.info(
+      `Found ${serverFiles.length} server files for ${integration.key}`,
     );
     files.push(...serverFiles);
   }
 
-  if (hasFrontend || hasNothing) {
+  if (hasFrontend || !hasAnyIntegration) {
     const webPath = path.join(baseDataDir, "web");
-    const webFiles = await processDirectoryFiles(webPath, "web", workspaceDir);
+    const webFiles = await processDirectoryFiles(webPath, "web", branchDir);
     files.push(...webFiles);
   }
 

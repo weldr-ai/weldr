@@ -12,42 +12,45 @@ import {
 } from "@weldr/db/schema";
 import { Fly } from "@weldr/shared/fly";
 import { nanoid } from "@weldr/shared/nanoid";
+import { isLocalMode } from "@weldr/shared/state";
 import { Tigris } from "@weldr/shared/tigris";
-import type {
-  AssistantMessage,
-  ChatMessage,
-  ToolMessage,
-} from "@weldr/shared/types";
 import {
   insertProjectSchema,
   updateProjectSchema,
 } from "@weldr/shared/validators/projects";
 
 import { protectedProcedure } from "../init";
+import { callAgentProxy } from "../utils";
 
 export const projectsRouter = {
   create: protectedProcedure
     .input(insertProjectSchema)
     .mutation(async ({ ctx, input }) => {
       const projectId = nanoid();
+      const mainBranchId = nanoid();
 
       let developmentAppId: string | undefined;
       let productionAppId: string | undefined;
 
       try {
-        return await ctx.db.transaction(async (tx) => {
-          // The production app is created first
-          // so we can generate a deploy token for it
-          // to be used in the development app
-          productionAppId = await Fly.app.create({
-            type: "production",
-            projectId,
-          });
+        const project = await ctx.db.transaction(async (tx) => {
+          // Only create Fly apps and machines in cloud mode
+          // In local mode, skip Fly.io infrastructure creation
+          if (!isLocalMode()) {
+            // The production app is created first
+            // so we can generate a deploy token for it
+            // to be used in the development app
+            productionAppId = await Fly.app.create({
+              type: "production",
+              projectId,
+            });
 
-          developmentAppId = await Fly.app.create({
-            type: "development",
-            projectId,
-          });
+            developmentAppId = await Fly.app.create({
+              type: "development",
+              projectId,
+              branchId: mainBranchId,
+            });
+          }
 
           const [project] = await tx
             .insert(projects)
@@ -118,8 +121,11 @@ export const projectsRouter = {
           const [mainBranch] = await tx
             .insert(branches)
             .values({
+              id: mainBranchId,
+              name: "main",
               projectId,
               isMain: true,
+              userId: ctx.session.user.id,
             })
             .returning();
 
@@ -136,8 +142,9 @@ export const projectsRouter = {
               projectId,
               userId: ctx.session.user.id,
               number: 1,
+              sequenceNumber: 1,
               chatId: chat.id,
-              branchId: mainBranch.id,
+              branchId: mainBranchId,
             })
             .returning();
 
@@ -153,22 +160,45 @@ export const projectsRouter = {
             .set({
               headVersionId: version.id,
             })
-            .where(eq(branches.id, mainBranch.id));
+            .where(eq(branches.id, mainBranchId));
 
           return project;
         });
+
+        // Trigger agent workflow without waiting for response
+        callAgentProxy(
+          "/trigger",
+          {
+            projectId,
+            branchId: mainBranchId,
+          },
+          ctx.headers,
+        ).catch((error) => {
+          console.error("Failed to trigger agent workflow:", error);
+        });
+
+        return project;
       } catch (error) {
-        const promises = [];
+        // Only clean up Fly apps in cloud mode
+        if (!isLocalMode()) {
+          const promises = [];
 
-        if (developmentAppId) {
-          promises.push(Fly.app.destroy({ type: "development", projectId }));
+          if (developmentAppId) {
+            promises.push(Fly.app.destroy({ type: "development", projectId }));
+            promises.push(
+              Tigris.bucket.delete(
+                `project-${projectId}-branch-${mainBranchId}`,
+              ),
+            );
+            promises.push(Tigris.credentials.delete(projectId));
+          }
+
+          if (productionAppId) {
+            promises.push(Fly.app.destroy({ type: "production", projectId }));
+          }
+
+          await Promise.all(promises);
         }
-
-        if (productionAppId) {
-          promises.push(Fly.app.destroy({ type: "production", projectId }));
-        }
-
-        await Promise.all(promises);
 
         console.error(error);
         if (error instanceof TRPCError) {
@@ -195,7 +225,7 @@ export const projectsRouter = {
     }
   }),
   byId: protectedProcedure
-    .input(z.object({ id: z.string(), versionId: z.string().optional() }))
+    .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       try {
         const project = await ctx.db.query.projects.findFirst({
@@ -250,198 +280,7 @@ export const projectsRouter = {
           });
         }
 
-        const branch = await ctx.db.query.branches.findFirst({
-          where: and(
-            eq(branches.projectId, input.id),
-            eq(branches.isMain, true),
-          ),
-          with: {
-            headVersion: {
-              columns: {
-                id: true,
-                message: true,
-                createdAt: true,
-                parentVersionId: true,
-                number: true,
-                status: true,
-                description: true,
-                projectId: true,
-                publishedAt: true,
-              },
-              with: {
-                chat: {
-                  with: {
-                    messages: {
-                      orderBy: (messages, { asc }) => [asc(messages.createdAt)],
-                      with: {
-                        attachments: {
-                          columns: {
-                            name: true,
-                            key: true,
-                          },
-                        },
-                        user: {
-                          columns: {
-                            name: true,
-                          },
-                        },
-                      },
-                    },
-                  },
-                },
-                declarations: {
-                  with: {
-                    declaration: {
-                      columns: {
-                        id: true,
-                        metadata: true,
-                        nodeId: true,
-                        progress: true,
-                      },
-                      with: {
-                        node: true,
-                        dependencies: true,
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        });
-
-        if (!branch || !branch.headVersion) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Branch not found",
-          });
-        }
-
-        const getMessagesWithAttachments = async (
-          version: typeof branch.headVersion,
-        ) => {
-          const results = [];
-
-          for (const message of version.chat.messages) {
-            // Filter assistant messages for call_coder tool calls
-            let content = message.content as
-              | ToolMessage["content"]
-              | AssistantMessage["content"];
-
-            // Skip tool messages with call_coder results
-            if (message.role === "tool" && Array.isArray(message.content)) {
-              content = content.filter(
-                (item) =>
-                  !(
-                    item?.type === "tool-result" &&
-                    item?.toolName === "call_coder"
-                  ),
-              );
-            } else if (message.role === "assistant") {
-              content = content.filter(
-                (item) =>
-                  !(
-                    item?.type === "tool-call" &&
-                    item?.toolName === "call_coder"
-                  ),
-              );
-            }
-
-            if (content.length === 0) continue;
-
-            // Get attachment URLs
-            const attachmentsWithUrls = await Promise.all(
-              message.attachments.map(async (attachment) => ({
-                name: attachment.name,
-                url: await Tigris.object.getSignedUrl(
-                  // biome-ignore lint/style/noNonNullAssertion: reason
-                  process.env.GENERAL_BUCKET!,
-                  attachment.key,
-                ),
-              })),
-            );
-
-            results.push({
-              ...message,
-              content,
-              attachments: attachmentsWithUrls,
-            });
-          }
-
-          return results;
-        };
-
-        const getVersionDeclarations = (version: typeof branch.headVersion) => {
-          const declarations = version.declarations
-            .filter((declaration) => declaration.declaration.node)
-            .map((declaration) => declaration.declaration);
-
-          const declarationToCanvasNodeMap = new Map(
-            declarations.map((declaration) => [
-              declaration.id,
-              declaration.node?.id,
-            ]),
-          );
-
-          return declarations.map((declaration) => ({
-            declaration,
-            edges: declaration.dependencies.map((dependency) => ({
-              dependencyId: declarationToCanvasNodeMap.get(
-                dependency.dependencyId,
-              ),
-              dependentId: declarationToCanvasNodeMap.get(
-                dependency.dependentId,
-              ),
-            })),
-          }));
-        };
-
-        if (!branch.headVersion) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Version not found",
-          });
-        }
-
-        const headVersionDeclarations = getVersionDeclarations(
-          branch.headVersion,
-        );
-
-        const edges = Array.from(
-          new Map(
-            headVersionDeclarations
-              .flatMap((decl) => decl.edges)
-              .map((edge) => [
-                `${edge.dependencyId}-${edge.dependentId}`,
-                edge,
-              ]),
-          ).values(),
-        ).filter(
-          (edge) =>
-            edge.dependencyId !== undefined && edge.dependentId !== undefined,
-        ) as {
-          dependencyId: string;
-          dependentId: string;
-        }[];
-
-        const result = {
-          ...project,
-          branch: {
-            ...branch,
-            headVersion: {
-              ...branch.headVersion,
-              edges,
-              chat: {
-                ...branch.headVersion.chat,
-                messages: (await getMessagesWithAttachments(
-                  branch.headVersion,
-                )) as ChatMessage[],
-              },
-            },
-          },
-        };
-
-        return result;
+        return project;
       } catch (error) {
         console.error(error);
         if (error instanceof TRPCError) {
@@ -506,21 +345,25 @@ export const projectsRouter = {
           });
         }
 
-        await Promise.all([
-          Fly.app.destroy({
-            type: "development",
-            projectId: project.id,
-          }),
-          Fly.app.destroy({
-            type: "preview",
-            projectId: project.id,
-          }),
-          Fly.app.destroy({
-            type: "production",
-            projectId: project.id,
-          }),
-          Tigris.bucket.delete(`app-${project.id}`),
-        ]);
+        // Only destroy Fly apps in cloud mode
+        if (!isLocalMode()) {
+          await Promise.all([
+            Fly.app.destroy({
+              type: "development",
+              projectId: project.id,
+            }),
+            Fly.app.destroy({
+              type: "preview",
+              projectId: project.id,
+            }),
+            Fly.app.destroy({
+              type: "production",
+              projectId: project.id,
+            }),
+            Tigris.bucket.delete(`project-${project.id}`),
+            Tigris.credentials.delete(project.id),
+          ]);
+        }
 
         await ctx.db
           .delete(projects)
