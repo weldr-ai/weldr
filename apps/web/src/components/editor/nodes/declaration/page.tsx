@@ -9,7 +9,7 @@ import {
   ShieldCheckIcon,
   ShieldXIcon,
 } from "lucide-react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { memo, useCallback, useState } from "react";
 
 import { Badge } from "@weldr/ui/components/badge";
@@ -57,15 +57,18 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
     projectId: string;
     branchId?: string;
   }>();
+  const searchParams = useSearchParams();
+  const versionId = searchParams.get("versionId") ?? undefined;
 
   const branch = queryClient.getQueryData(
     trpc.branches.byIdOrMain.queryKey({
       id: branchId,
       projectId,
+      versionId,
     }),
   );
 
-  const headVersion = branch?.headVersion;
+  const versionToUse = branch?.selectedVersion ?? branch?.headVersion;
 
   const { data: declaration } = useQuery(
     trpc.declarations.byId.queryOptions(
@@ -106,8 +109,8 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
     }
 
     const baseUrl =
-      headVersion?.id && projectId && branch?.id
-        ? buildPreviewUrl(headVersion.id, projectId, branch.id)
+      versionToUse?.id && projectId && branch?.id
+        ? buildPreviewUrl(versionToUse.id, projectId, branch.id)
         : "";
 
     let route = specs?.route.replace(/^\//, "");
@@ -127,7 +130,7 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
 
     return `${baseUrl}/${route}`;
   }, [
-    headVersion?.id,
+    versionToUse?.id,
     projectId,
     branch?.id,
     specs,
@@ -196,7 +199,7 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
   }, [specs]);
 
   // Determine the current state
-  const isVersionCompleted = headVersion?.status === "completed";
+  const isVersionCompleted = versionToUse?.status === "completed";
   const isDeclarationCompleted = declaration.progress === "completed";
   const needsParameters =
     getRouteParameters().length > 0 && (!showPreview || !canShowPreview());
@@ -211,7 +214,7 @@ export const PageNode = memo(({ data: _data, selected }: CanvasNodeProps) => {
     <>
       <Card
         className={cn(
-          "nowheel drag-handle group relative h-[300px] w-[400px] origin-center rounded-lg p-0 dark:bg-muted",
+          "nowheel drag-handle group relative h-[300px] w-[400px] origin-center cursor-grab rounded-lg p-0 dark:bg-muted",
           {
             "border-primary": selected,
             "border-none": isPreviewReady,

@@ -1,8 +1,10 @@
 import equal from "fast-deep-equal";
+import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 
 import type { RouterOutputs } from "@weldr/api";
 import { authClient } from "@weldr/auth/client";
+import { Button } from "@weldr/ui/components/button";
 import { cn } from "@weldr/ui/lib/utils";
 
 import { useChatVisibility } from "@/hooks/use-chat-visibility";
@@ -29,6 +31,8 @@ export const Chat = memo<ChatProps>(
   ({ integrationTemplates, project, branch, environmentVariables }) => {
     const { data: session } = authClient.useSession();
 
+    const versionToUse = branch.selectedVersion ?? branch.headVersion;
+
     const {
       messages,
       setMessages,
@@ -38,8 +42,8 @@ export const Chat = memo<ChatProps>(
       setAttachments,
       handleSubmit: handleMessageSubmit,
     } = useMessages({
-      initialMessages: branch.headVersion.chat.messages,
-      chatId: branch.headVersion.chat.id,
+      initialMessages: versionToUse.chat.messages,
+      chatId: versionToUse.chat.id,
       session,
     });
 
@@ -47,13 +51,17 @@ export const Chat = memo<ChatProps>(
       useScrollToBottom<HTMLDivElement>(messages);
 
     const { status, setStatus } = useStatus({
-      version: branch.headVersion,
+      version: versionToUse,
       messages,
       project,
     });
 
-    const { isChatVisible, chatContainerRef, handleInputFocus } =
-      useChatVisibility();
+    const {
+      isChatVisible,
+      chatContainerRef,
+      handleInputFocus,
+      toggleChatVisibility,
+    } = useChatVisibility();
 
     const [isTimelineOpen, setIsTimelineOpen] = useState(true);
 
@@ -64,7 +72,7 @@ export const Chat = memo<ChatProps>(
       useEventStream({
         projectId: project.id,
         branchId: branch.id,
-        chatId: branch.headVersion.chat.id,
+        chatId: versionToUse.chat.id,
         branch,
         setStatus,
         setMessages,
@@ -106,7 +114,7 @@ export const Chat = memo<ChatProps>(
     ]);
 
     const editorReferences = useEditorReferences({
-      version: branch.headVersion,
+      version: versionToUse,
     });
 
     useEffect(() => {
@@ -115,9 +123,7 @@ export const Chat = memo<ChatProps>(
       };
     }, [closeEventStream]);
 
-    const conventionalCommit = parseConventionalCommit(
-      branch.headVersion.message,
-    );
+    const conventionalCommit = parseConventionalCommit(versionToUse.message);
 
     return (
       <div
@@ -138,7 +144,7 @@ export const Chat = memo<ChatProps>(
           <TimelineContent className="border-b" />
           <div className="flex items-center justify-between gap-2 border-b px-2 py-1 pr-1 text-xs">
             <div className="flex w-full items-center gap-2 truncate font-medium">
-              <span className="text-muted-foreground">{`#${branch.headVersion.sequenceNumber}`}</span>
+              <span className="text-muted-foreground">{`#${versionToUse.sequenceNumber}`}</span>
               <span className="flex items-center gap-1 truncate">
                 {conventionalCommit.type && (
                   <CommitTypeBadge type={conventionalCommit.type} />
@@ -148,7 +154,22 @@ export const Chat = memo<ChatProps>(
                 </span>
               </span>
             </div>
-            <TimelineTrigger />
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-6"
+                onClick={toggleChatVisibility}
+                aria-label={isChatVisible ? "Hide chat" : "Show chat"}
+              >
+                {isChatVisible ? (
+                  <ChevronDownIcon className="size-4" />
+                ) : (
+                  <ChevronUpIcon className="size-4" />
+                )}
+              </Button>
+              <TimelineTrigger />
+            </div>
           </div>
         </Timeline>
 
@@ -184,7 +205,7 @@ export const Chat = memo<ChatProps>(
 
         <MultimodalInput
           type="editor"
-          chatId={branch.headVersion.chat.id}
+          chatId={versionToUse.chat.id}
           message={userMessageContent}
           setMessage={setUserMessageContent}
           attachments={attachments}
@@ -207,17 +228,15 @@ export const Chat = memo<ChatProps>(
     if (prevProps.branch.id !== nextProps.branch.id) return false;
     // Check if branch name changed (streamed from generate-branch-name step)
     if (prevProps.branch.name !== nextProps.branch.name) return false;
+    // Check if selectedVersion changed
+    const prevVersion =
+      prevProps.branch.selectedVersion ?? prevProps.branch.headVersion;
+    const nextVersion =
+      nextProps.branch.selectedVersion ?? nextProps.branch.headVersion;
+    if (prevVersion.id !== nextVersion.id) return false;
     // Check if version message or description changed (streamed from generate-version-details step)
-    if (
-      prevProps.branch.headVersion.message !==
-      nextProps.branch.headVersion.message
-    )
-      return false;
-    if (
-      prevProps.branch.headVersion.description !==
-      nextProps.branch.headVersion.description
-    )
-      return false;
+    if (prevVersion.message !== nextVersion.message) return false;
+    if (prevVersion.description !== nextVersion.description) return false;
     if (
       prevProps.integrationTemplates.length !==
       nextProps.integrationTemplates.length

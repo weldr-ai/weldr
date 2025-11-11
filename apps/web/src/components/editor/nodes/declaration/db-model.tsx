@@ -159,7 +159,7 @@ export const DbModelNode = memo(
         <Card
           ref={cardRef}
           className={cn(
-            "drag-handle origin-center cursor-pointer p-0 transition-all duration-300 ease-in-out dark:bg-muted",
+            "drag-handle origin-center cursor-grab p-0 transition-all duration-300 ease-in-out dark:bg-muted",
             {
               "border-primary": selected,
               "w-[400px]": !isExpanded,

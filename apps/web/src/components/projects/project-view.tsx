@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import type { Edge } from "@xyflow/react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 
 import type { RouterOutputs } from "@weldr/api";
 
@@ -26,6 +26,8 @@ export function ProjectView({
   integrationTemplates: RouterOutputs["integrationTemplates"]["list"];
 }) {
   const { branchId } = useParams<{ branchId?: string }>();
+  const searchParams = useSearchParams();
+  const versionId = searchParams.get("versionId") ?? undefined;
 
   const trpc = useTRPC();
 
@@ -45,6 +47,7 @@ export function ProjectView({
       {
         id: branchId,
         projectId: _project.id,
+        versionId,
       },
       {
         initialData: _branch,

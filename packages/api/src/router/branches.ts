@@ -157,7 +157,13 @@ export const branchRouter = {
       return branch;
     }),
   byIdOrMain: protectedProcedure
-    .input(z.object({ id: z.string().optional(), projectId: z.string() }))
+    .input(
+      z.object({
+        id: z.string().optional(),
+        projectId: z.string(),
+        versionId: z.string().optional(),
+      }),
+    )
     .query(async ({ ctx, input }) => {
       const where: SQL[] = [
         eq(branches.userId, ctx.session.user.id),
@@ -435,6 +441,80 @@ export const branchRouter = {
         }
       }
 
+      // Fetch selected version if versionId is provided
+      let selectedVersion = null;
+      if (input.versionId) {
+        const version = await ctx.db.query.versions.findFirst({
+          where: and(
+            eq(versions.id, input.versionId),
+            eq(versions.branchId, branch.id),
+            eq(versions.projectId, input.projectId),
+          ),
+          columns: {
+            id: true,
+            message: true,
+            createdAt: true,
+            parentVersionId: true,
+            number: true,
+            sequenceNumber: true,
+            status: true,
+            description: true,
+            projectId: true,
+            publishedAt: true,
+          },
+          with: {
+            chat: {
+              with: {
+                messages: {
+                  orderBy: (messages, { asc }) => [asc(messages.createdAt)],
+                  with: {
+                    attachments: {
+                      columns: {
+                        name: true,
+                        key: true,
+                      },
+                    },
+                    user: {
+                      columns: {
+                        name: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            declarations: {
+              with: {
+                declaration: {
+                  columns: {
+                    id: true,
+                    metadata: true,
+                    nodeId: true,
+                    progress: true,
+                  },
+                  with: {
+                    node: true,
+                    dependencies: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        if (version) {
+          selectedVersion = {
+            ...version,
+            chat: {
+              ...version.chat,
+              messages: (await getMessagesWithAttachments(
+                version,
+              )) as ChatMessage[],
+            },
+          };
+        }
+      }
+
       return {
         ...branch,
         headVersion: {
@@ -446,6 +526,7 @@ export const branchRouter = {
             )) as ChatMessage[],
           },
         },
+        selectedVersion,
         versions: branchVersions,
         versionToBranchesMap: Object.fromEntries(versionToBranchesMap),
         ancestryChain,

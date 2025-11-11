@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { nanoid } from "@weldr/shared/nanoid";
 import type { Attachment, ChatMessage, UserMessage } from "@weldr/shared/types";
@@ -26,6 +26,13 @@ export function useMessages({
     UserMessage["content"]
   >([]);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
+
+  useEffect(() => {
+    setMessages(initialMessages);
+    // Clear user input when switching chats
+    setUserMessageContent([]);
+    setAttachments([]);
+  }, [chatId, initialMessages]);
 
   const handleSubmit = async () => {
     if (userMessageContent.length === 0) {

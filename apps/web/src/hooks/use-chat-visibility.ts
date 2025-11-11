@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 export function useChatVisibility() {
   const [isChatVisible, setIsChatVisible] = useState(true);
@@ -8,23 +8,8 @@ export function useChatVisibility() {
     setIsChatVisible(true);
   }, []);
 
-  // Handle clicks outside the chat container
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        chatContainerRef.current &&
-        !chatContainerRef.current.contains(event.target as Node)
-      ) {
-        setIsChatVisible(false);
-      }
-    };
-
-    // Use capture phase to ensure we catch the event before it's stopped
-    document.addEventListener("mousedown", handleClickOutside, true);
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside, true);
-    };
+  const toggleChatVisibility = useCallback(() => {
+    setIsChatVisible((prev) => !prev);
   }, []);
 
   return {
@@ -32,5 +17,6 @@ export function useChatVisibility() {
     setIsChatVisible,
     chatContainerRef,
     handleInputFocus,
+    toggleChatVisibility,
   };
 }

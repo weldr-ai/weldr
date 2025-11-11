@@ -139,6 +139,9 @@ export function TimelineContent({ className }: { className?: string }) {
   const siblingVariants = branch.siblingVariants || [];
   const lastVersion = versions[versions.length - 1];
 
+  // Determine the current version (selectedVersion or headVersion)
+  const currentVersionId = branch.selectedVersion?.id ?? branch.headVersion.id;
+
   if (versions.length === 0) {
     return (
       <div className="border-b p-4 text-center text-muted-foreground text-xs">
@@ -199,6 +202,9 @@ export function TimelineContent({ className }: { className?: string }) {
             const forkedBranches = versionToBranchesMap[version.id] || [];
             const parsed = parseConventionalCommit(version.message || "");
             const isLast = index === versions.length - 1;
+            const isCurrentVersion = version.id === currentVersionId;
+            const isTemporarilyHighlighted =
+              highlightedVersionId === version.id;
 
             return (
               <div key={version.id} className="relative">
@@ -209,12 +215,20 @@ export function TimelineContent({ className }: { className?: string }) {
                   className={cn(
                     "grid cursor-default grid-cols-[1fr_1.5rem] items-center gap-2 rounded-md transition-colors duration-300",
                     {
-                      "bg-orange-500/10": highlightedVersionId === version.id,
+                      "bg-orange-500/10":
+                        isTemporarilyHighlighted && !isCurrentVersion,
                     },
                   )}
                 >
                   <HoverCard openDelay={0} closeDelay={0}>
-                    <HoverCardTrigger className="grid grid-cols-[auto_2.5rem_3rem_1fr] items-center gap-2 rounded-md px-2 py-1 hover:bg-accent">
+                    <HoverCardTrigger
+                      className={cn(
+                        "grid grid-cols-[auto_2.5rem_3rem_1fr] items-center gap-2 rounded-md px-2 py-1 hover:bg-accent",
+                        {
+                          "bg-primary/30 hover:bg-primary/40": isCurrentVersion,
+                        },
+                      )}
+                    >
                       <div className="relative flex h-full items-center justify-center">
                         <div
                           className={cn(
@@ -240,8 +254,8 @@ export function TimelineContent({ className }: { className?: string }) {
 
                       <div className="flex items-center">
                         {parsed.type &&
-                        version.status !== "completed" &&
-                        version.status !== "failed" ? (
+                        (version.status === "completed" ||
+                          version.status === "failed") ? (
                           <CommitTypeBadge type={parsed.type} />
                         ) : (
                           <CommitTypeBadge type="pending" />
@@ -360,8 +374,7 @@ function TimelineItem({
         <div className="flex items-center gap-1">
           <span className="font-medium text-muted-foreground text-xs">{`#${version.sequenceNumber}`}</span>
           {parsed.type &&
-          version.status !== "completed" &&
-          version.status !== "failed" ? (
+          (version.status === "completed" || version.status === "failed") ? (
             <CommitTypeBadge type={parsed.type} />
           ) : (
             <CommitTypeBadge type="pending" />

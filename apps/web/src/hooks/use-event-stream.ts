@@ -426,6 +426,14 @@ export function useEventStream({
     }
   }, []);
 
+  // Handle chatId changes (e.g., when version changes)
+  useEffect(() => {
+    // Close existing connection when chatId changes
+    closeEventStream();
+    // Reset last event ID since we're switching to a different chat
+    lastEventIdRef.current = null;
+  }, [chatId, closeEventStream]);
+
   // Auto-connect to event stream on mount if workflow is active
   useEffect(() => {
     // Only connect if there's no existing connection and workflow might be active
@@ -436,7 +444,7 @@ export function useEventStream({
     ) {
       connectToEventStream();
     }
-  }, [branch.headVersion.status, connectToEventStream]);
+  }, [branch.headVersion.status, connectToEventStream, chatId]);
 
   // Cleanup on unmount
   useEffect(() => {

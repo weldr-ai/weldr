@@ -12,21 +12,29 @@ import { getVersionDeclarations } from "../../_utils/get-version-declarations";
 
 export default async function BranchPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ projectId: string; branchId: string }>;
+  searchParams: Promise<{ versionId?: string }>;
 }): Promise<JSX.Element | undefined> {
   try {
     const { projectId, branchId } = await params;
+    const { versionId } = await searchParams;
     const project = await api.projects.byId({ id: projectId });
-    const branch = await api.branches.byIdOrMain({ id: branchId, projectId });
+    const branch = await api.branches.byIdOrMain({
+      id: branchId,
+      projectId,
+      versionId,
+    });
     const integrationTemplates = await api.integrationTemplates.list();
 
     await trackProjectActivity(projectId, branch.id);
 
-    const headVersionDeclarations = getVersionDeclarations(branch.headVersion);
+    const versionToUse = branch.selectedVersion ?? branch.headVersion;
+    const versionDeclarations = getVersionDeclarations(versionToUse);
 
     const initialNodes: CanvasNode[] =
-      headVersionDeclarations?.reduce<CanvasNode[]>((acc, e) => {
+      versionDeclarations?.reduce<CanvasNode[]>((acc, e) => {
         if (!e.declaration.metadata?.specs) return acc;
 
         acc.push({
@@ -43,7 +51,7 @@ export default async function BranchPage({
       }, []) ?? [];
 
     const initialEdges: Edge[] = Array.from(
-      headVersionDeclarations
+      versionDeclarations
         .flatMap((decl) => decl.edges)
         .filter(
           (edge) =>

@@ -317,7 +317,6 @@ export function Editor({
 
   return (
     <ReactFlow
-      className="scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent bg-background dark:bg-muted"
       nodes={styledNodes}
       onNodesChange={onNodesChange}
       edges={styledEdges}
@@ -337,18 +336,7 @@ export function Editor({
       colorMode={resolvedTheme as ColorMode}
     >
       {nodes.length === 0 && <Placeholder />}
-      <Background
-        color={
-          resolvedTheme === "dark"
-            ? "var(--color-background)"
-            : "var(--color-muted)"
-        }
-        bgColor={
-          resolvedTheme === "dark"
-            ? "var(--color-background)"
-            : "var(--color-muted)"
-        }
-      />
+      <Background color="transparent" bgColor="var(--color-background)" />
 
       <Panel
         position="bottom-left"
