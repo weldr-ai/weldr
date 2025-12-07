@@ -11,6 +11,15 @@ export async function getProjectContext(project: typeof projects.$inferSelect) {
           category: true,
         },
       },
+      environmentVariableMappings: {
+        with: {
+          environmentVariable: {
+            columns: {
+              key: true,
+            },
+          },
+        },
+      },
     },
   });
 
@@ -23,13 +32,30 @@ export async function getProjectContext(project: typeof projects.$inferSelect) {
     limit: 1,
   });
 
-  return projectVersionsList.length > 0
-    ? `You are working on an app called ${project.title} with the following integrations:
-${projectIntegrationsList
-  .map(
-    (integration) =>
-      `- ${integration.integrationTemplate.name} (${integration.integrationTemplate.category.key})`,
-  )
-  .join(", ")}`
-    : "This is a new project";
+  if (projectVersionsList.length === 0) {
+    return "This is a new project";
+  }
+
+  if (projectIntegrationsList.length === 0) {
+    return `You are working on an app called ${project.title} with no integrations installed.`;
+  }
+
+  const integrationsText = projectIntegrationsList
+    .map((integration) => {
+      const integrationName = integration.integrationTemplate.name;
+      const category = integration.integrationTemplate.category.key;
+      const envVars = integration.environmentVariableMappings
+        .map((mapping) => mapping.environmentVariable.key)
+        .join(", ");
+
+      if (envVars) {
+        return `- ${integrationName} (${category})
+  Environment Variables: ${envVars}`;
+      }
+      return `- ${integrationName} (${category})`;
+    })
+    .join("\n");
+
+  return `You are working on an app called ${project.title} with the following integrations:
+${integrationsText}`;
 }
