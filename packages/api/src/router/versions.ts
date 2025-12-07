@@ -450,8 +450,9 @@ export const versionRouter = {
         return revertedVersion;
       });
 
+      let commitHash: string | undefined;
       try {
-        const { commitHash } = await callAgentProxy<{ commitHash: string }>(
+        const result = await callAgentProxy<{ commitHash: string }>(
           "/revert",
           {
             projectId: input.projectId,
@@ -461,7 +462,8 @@ export const versionRouter = {
           ctx.headers,
         );
 
-        // Update the reverted version with the commit hash
+        commitHash = result.commitHash;
+
         if (commitHash) {
           await db
             .update(versions)
@@ -471,8 +473,50 @@ export const versionRouter = {
           revertedVersion.commitHash = commitHash;
         }
       } catch (error) {
-        // Log error but don't fail the entire revert since the version is already created
-        console.error("Failed to perform git revert:", error);
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+
+        if (isLocalMode()) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: `Failed to perform git revert: ${errorMessage}`,
+          });
+        } else {
+          console.error(
+            "Failed to sync workspace and commit after snapshot revert:",
+            error,
+          );
+
+          try {
+            await db
+              .update(branches)
+              .set({ headVersionId: version.branch.headVersionId })
+              .where(eq(branches.id, version.branch.id));
+
+            await db
+              .delete(versions)
+              .where(eq(versions.id, revertedVersion.id));
+
+            await db.delete(chats).where(eq(chats.id, revertedVersion.chatId));
+          } catch (cleanupError) {
+            console.error(
+              "Failed to cleanup after revert failure:",
+              cleanupError,
+            );
+          }
+
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: `Failed to perform git revert: ${errorMessage}`,
+          });
+        }
+      }
+
+      if (isLocalMode() && !commitHash) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Git revert completed but no commit hash was returned",
+        });
       }
 
       return revertedVersion;

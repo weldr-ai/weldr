@@ -2,9 +2,11 @@ import { createRoute, z } from "@hono/zod-openapi";
 
 import { and, db, eq } from "@weldr/db";
 import { branches, projects, versions } from "@weldr/db/schema";
-import { getBranchDir } from "@weldr/shared/state";
+import { Logger } from "@weldr/shared/logger";
+import { getBranchDir, isLocalMode } from "@weldr/shared/state";
 
 import { auth } from "@/lib/auth";
+import { syncBranchFromS3 } from "@/lib/branch-state";
 import { Git } from "@/lib/git";
 import { createRouter } from "@/lib/utils";
 
@@ -101,9 +103,11 @@ router.openapi(route, async (c) => {
     return c.json({ error: "Version not found" }, 404);
   }
 
-  if (!version.commitHash) {
-    return c.json({ error: "Version does not have a commit hash" }, 400);
-  }
+  const logger = Logger.get({
+    projectId,
+    branchId,
+    versionId: version.id,
+  });
 
   try {
     const branchDir = getBranchDir(projectId, branchId);
@@ -113,16 +117,86 @@ router.openapi(route, async (c) => {
       return c.json({ error: "Git repository not initialized" }, 400);
     }
 
-    // Perform the git revert
-    const commitHash = await Git.revert(
-      branch.name,
-      version.commitHash,
-      `revert: revert to #${version.sequenceNumber} ${version.message}`,
-      branchDir,
-    );
+    let commitHash: string;
+
+    if (isLocalMode()) {
+      // Local mode: use git revert command
+      if (!version.commitHash) {
+        return c.json({ error: "Version does not have a commit hash" }, 400);
+      }
+
+      logger.info("Local mode: performing git revert", {
+        extra: { commitHash: version.commitHash },
+      });
+
+      commitHash = await Git.revert(
+        branch.name,
+        version.commitHash,
+        `revert: revert to #${version.sequenceNumber} ${version.message}`,
+        branchDir,
+      );
+    } else {
+      // Cloud mode: snapshot was already reverted in bucket
+      // We need to sync the workspace from S3 to match the reverted bucket state
+      // Then commit the reverted state as a new commit
+
+      logger.info(
+        "Cloud mode: syncing workspace from S3 after snapshot revert",
+        {
+          extra: { branchId, projectId },
+        },
+      );
+
+      const syncResult = await syncBranchFromS3(branchId, projectId);
+
+      if (!syncResult.success) {
+        logger.error("Failed to sync branch from S3 after snapshot revert", {
+          extra: { branchId, projectId },
+        });
+        return c.json(
+          { error: "Failed to sync workspace from S3 after snapshot revert" },
+          500,
+        );
+      }
+
+      if (syncResult.skipped) {
+        logger.warn("S3 sync was skipped", {
+          extra: { branchId, projectId, reason: syncResult.reason },
+        });
+      }
+
+      if (!session.user.name || !session.user.email) {
+        logger.error("Session user missing name or email", {
+          extra: { userId: session.user.id },
+        });
+        return c.json({ error: "User information incomplete for commit" }, 500);
+      }
+
+      logger.info("Cloud mode: committing reverted state", {
+        extra: { branchDir },
+      });
+
+      commitHash = await Git.commit(
+        `revert: revert to #${version.sequenceNumber} ${version.message}`,
+        { name: session.user.name, email: session.user.email },
+        branchDir,
+      );
+
+      logger.info("Cloud mode: reverted state committed", {
+        extra: { commitHash },
+      });
+    }
 
     return c.json({ success: true, commitHash });
   } catch (error) {
+    logger.error("Revert failed", {
+      extra: {
+        error: error instanceof Error ? error.message : String(error),
+        projectId,
+        branchId,
+        versionId: version.id,
+      },
+    });
     return c.json(
       { error: error instanceof Error ? error.message : "Revert failed" },
       500,
